@@ -1,4 +1,5 @@
 #include "fat_fs.h"
+#include "fat.h"
 
 FS_Instance *fs_create_instance(char *image_path) {
 

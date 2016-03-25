@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 	char *arg1, *arg2;
 
 	if (2 != argc) {
-		fprintf(stderr, "Usage: %s fat32image\n", argv[0]);
+		fprintf(stderr, "Usage: %s fatimage\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 

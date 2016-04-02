@@ -30,7 +30,9 @@ struct fatBS_struct {
 	uint16_t BPB_NumHeads;
 	uint32_t BPB_HiddSec;
 	uint32_t BPB_TotSec32;
-	// FAT12/16:
+};
+
+struct fatBS16_struct {
 	uint8_t BPB_DrvNum;
 	uint8_t BPB_Reserved1;
 	uint8_t BPB_BootSig;
@@ -40,8 +42,9 @@ struct fatBS_struct {
 	uint8_t BS_CodeReserved[448];
 	uint8_t BS_SigA;
 	uint8_t BS_SigB;
-	// FAT32:
-	/*
+};
+
+struct fatBS32_struct {
 	uint32_t BPB_FATSz32;
 	uint16_t BPB_ExtFlags;
 	uint8_t BPB_FSVerLow;
@@ -59,7 +62,6 @@ struct fatBS_struct {
 	char BS_CodeReserved[420];
 	uint8_t BS_SigA;
 	uint8_t BS_SigB;
-	*/
 };
 
 struct fatDate_struct {
@@ -91,6 +93,8 @@ struct fatEntry_struct {
 #pragma pack(pop)
 
 typedef struct fatBS_struct fatBS;
+typedef struct fatBS16_struct fatBS16;
+typedef struct fatBS32_struct fatBS32;
 typedef struct fatDate_struct fatDate;
 typedef struct fatTime_struct fatTime;
 typedef struct fatEntry_struct fatEntry;

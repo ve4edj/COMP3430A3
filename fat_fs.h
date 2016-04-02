@@ -5,10 +5,23 @@
 #include <stdio.h>
 #include "fat.h"
 
+extern const char * typeNames[];
+
+typedef enum {
+	FS_FAT12 = 0,
+	FS_FAT16 = 1,
+	FS_FAT32 = 2
+} fs_type;
+
 struct FS_Instance_struct {
 	FILE * disk;
 	fatBS * bootsect;
-
+	fatBS16 * bootsect16;
+	fatBS32 * bootsect32;
+	uint32_t FATsz;
+	uint32_t numSectors;
+	uint64_t totalSize;
+	fs_type type;
 };
 
 typedef struct FS_Instance_struct FS_Instance;

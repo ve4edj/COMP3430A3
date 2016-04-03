@@ -120,6 +120,17 @@ uint8_t isFATEntryEOF(uint32_t entry, FS_Instance * fsi) {
 	}
 }
 
+uint8_t isFATEntryBad(uint32_t entry, FS_Instance * fsi) {
+	switch (fsi->type) {
+		case FS_FAT12:
+			return (entry == 0x0FF7);
+		case FS_FAT16:
+			return (entry == 0xFFF7);
+		case FS_FAT32:
+			return (entry == 0x0FFFFFF7);
+	}
+}
+
 FS_CurrentDir fs_get_root(FS_Instance * fsi) {
 	switch (fsi->type) {
 		case FS_FAT12:

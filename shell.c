@@ -62,9 +62,9 @@ int main(int argc, char *argv[]) {
 				if (strncmp(buffer, CMD_CD, strlen(CMD_CD)) == 0)
 					current_dir = change_dir(fat_fs, current_dir, arg1+1);
 				else if (strncmp(buffer, CMD_MD, strlen(CMD_MD)) == 0)
-					 current_dir = make_dir(fat_fs, current_dir, arg1+1);
+					current_dir = make_dir(fat_fs, current_dir, arg1+1);
 				else if (strncmp(buffer, CMD_DEL, strlen(CMD_DEL)) == 0)
-					 current_dir = delete_file(fat_fs, current_dir, arg1+1);
+					current_dir = delete_file(fat_fs, current_dir, arg1+1);
 				else if (NULL != arg2) {
 					if (strncmp(buffer, CMD_GET, strlen(CMD_GET)) == 0)
 						get_file(fat_fs, current_dir, arg1+1, arg2+1);

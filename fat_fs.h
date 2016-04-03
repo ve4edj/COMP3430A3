@@ -28,18 +28,18 @@ struct FS_Instance_struct {
 };
 
 typedef struct FS_Instance_struct FS_Instance;
-typedef uint32_t FS_CurrentDir;
+typedef uint32_t FS_Directory;
 
 FS_Instance * fs_create_instance(char * image_path);
-FS_CurrentDir fs_get_root(FS_Instance * fsi);
+FS_Directory fs_get_root(FS_Instance * fsi);
 
 void print_info(FS_Instance * fsi);
-void print_dir(FS_Instance * fsi, FS_CurrentDir current_dir);
-FS_CurrentDir change_dir(FS_Instance * fsi, FS_CurrentDir current_dir, char * path);
-void get_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path, char * local_path);
-void put_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path, char * local_path);
-FS_CurrentDir make_dir(FS_Instance * fsi, FS_CurrentDir current_dir, char * path);
-FS_CurrentDir delete_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path);
+void print_dir(FS_Instance * fsi, FS_Directory current_dir);
+FS_Directory change_dir(FS_Instance * fsi, FS_Directory current_dir, char * path);
+void get_file(FS_Instance * fsi, FS_Directory current_dir, char * path, char * local_path);
+void put_file(FS_Instance * fsi, FS_Directory current_dir, char * path, char * local_path);
+FS_Directory make_dir(FS_Instance * fsi, FS_Directory current_dir, char * path);
+FS_Directory delete_file(FS_Instance * fsi, FS_Directory current_dir, char * path);
 
 void fs_cleanup(FS_Instance * fsi);
 

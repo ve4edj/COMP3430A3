@@ -22,7 +22,7 @@
 int main(int argc, char *argv[]) {
 	int done = 0, valid_cmd;
 	FS_Instance *fat_fs;
-	FS_CurrentDir current_dir;
+	FS_Directory current_dir;
 	char buffer[BUF_SIZE];
 	char buffer_raw[BUF_SIZE];
 	char *arg1, *arg2;

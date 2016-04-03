@@ -131,7 +131,7 @@ uint8_t isFATEntryBad(uint32_t entry, FS_Instance * fsi) {
 	}
 }
 
-FS_CurrentDir fs_get_root(FS_Instance * fsi) {
+FS_Directory fs_get_root(FS_Instance * fsi) {
 	switch (fsi->type) {
 		case FS_FAT12:
 		case FS_FAT16:
@@ -208,27 +208,27 @@ void print_info(FS_Instance * fsi) {
 	printf("\n");
 }
 
-void print_dir(FS_Instance * fsi, FS_CurrentDir current_dir) {
+void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 
 }
 
-FS_CurrentDir change_dir(FS_Instance * fsi, FS_CurrentDir current_dir, char * path) {
+FS_Directory change_dir(FS_Instance * fsi, FS_Directory current_dir, char * path) {
 
 }
 
-void get_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path, char * local_path) {
+void get_file(FS_Instance * fsi, FS_Directory current_dir, char * path, char * local_path) {
 
 }
 
-void put_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path, char * local_path) {
+void put_file(FS_Instance * fsi, FS_Directory current_dir, char * path, char * local_path) {
 
 }
 
-FS_CurrentDir make_dir(FS_Instance * fsi, FS_CurrentDir current_dir, char * path) {
+FS_Directory make_dir(FS_Instance * fsi, FS_Directory current_dir, char * path) {
 
 }
 
-FS_CurrentDir delete_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path) {
+FS_Directory delete_file(FS_Instance * fsi, FS_Directory current_dir, char * path) {
 
 }
 

@@ -49,8 +49,8 @@ FS_Instance * fs_create_instance(char * image_path) {
 	fsi->totalSize = fsi->numSectors * fsi->bootsect->BPB_BytsPerSec;
 
 	fsi->rootDirSectors = ((fsi->bootsect->BPB_RootEntCnt * 32) + (fsi->bootsect->BPB_BytsPerSec - 1)) / fsi->bootsect->BPB_BytsPerSec;
-	fsi->dataSec = fsi->numSectors - (fsi->bootsect->BPB_RsvdSecCnt + (fsi->bootsect->BPB_NumFATs * fsi->FATsz) + fsi->rootDirSectors);
-	fsi->countOfClusters = fsi->dataSec / fsi->bootsect->BPB_SecPerClus;
+	fsi->dataSec = (fsi->bootsect->BPB_RsvdSecCnt + (fsi->bootsect->BPB_NumFATs * fsi->FATsz) + fsi->rootDirSectors);
+	fsi->countOfClusters = (fsi->numSectors - fsi->dataSec) / fsi->bootsect->BPB_SecPerClus;
 
 	if (fsi->countOfClusters < 4085) {
 		fsi->type = FS_FAT12;
@@ -183,9 +183,13 @@ void print_info(FS_Instance * fsi) {
 	printf("\n");
 	printf("File System Type (computed): %s\n", typeNames[fsi->type]);
 	printf("FAT Size (sectors): %d\n", fsi->FATsz);
+	printf("Number of FATs: %d\n", fsi->bootsect->BPB_NumFATs);
+	printf("Reserved sectors: %d\n", fsi->bootsect->BPB_RsvdSecCnt);
+	printf("Root directory sectors: %llu\n", fsi->rootDirSectors);
+	printf("Data clusters: %llu\n", fsi->countOfClusters);
 	uint32_t freeClusters = 0;
 	for (int i = 0; i < fsi->countOfClusters; i++) {
-		if (getFATEntryForCluster(i, fsi) == 0) {
+		if (getFATEntryForCluster(i+2, fsi) == 0) {
 			freeClusters++;
 		}
 	}

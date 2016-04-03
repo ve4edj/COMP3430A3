@@ -40,22 +40,21 @@ FS_Instance * fs_create_instance(char * image_path) {
 		fsi->type = FS_FAT16;
 		fread(fsi->bootsect16, sizeof(fatBS16), 1, fsi->disk);
 	}
-	if (0 != fsi->bootsect->BPB_FATSz16) {
+	if (0 != fsi->bootsect->BPB_FATSz16)
 		fsi->FATsz = fsi->bootsect->BPB_FATSz16;
-	}
 
 	fsi->numSectors = fsi->bootsect->BPB_TotSec32;
 	if (fsi->numSectors == 0)
 		fsi->numSectors = fsi->bootsect->BPB_TotSec16;
 	fsi->totalSize = fsi->numSectors * fsi->bootsect->BPB_BytsPerSec;
 
-	long rootDirSectors = ((fsi->bootsect->BPB_RootEntCnt * 32) + (fsi->bootsect->BPB_BytsPerSec - 1)) / fsi->bootsect->BPB_BytsPerSec;
-	long dataSec = fsi->numSectors - (fsi->bootsect->BPB_RsvdSecCnt + (fsi->bootsect->BPB_NumFATs * fsi->FATsz) + rootDirSectors);
-	long countOfClusters = dataSec / fsi->bootsect->BPB_SecPerClus;
+	fsi->rootDirSectors = ((fsi->bootsect->BPB_RootEntCnt * 32) + (fsi->bootsect->BPB_BytsPerSec - 1)) / fsi->bootsect->BPB_BytsPerSec;
+	fsi->dataSec = fsi->numSectors - (fsi->bootsect->BPB_RsvdSecCnt + (fsi->bootsect->BPB_NumFATs * fsi->FATsz) + fsi->rootDirSectors);
+	fsi->countOfClusters = fsi->dataSec / fsi->bootsect->BPB_SecPerClus;
 
-	if (countOfClusters < 4085) {
+	if (fsi->countOfClusters < 4085) {
 		fsi->type = FS_FAT12;
-	} else if (countOfClusters < 65525) {
+	} else if (fsi->countOfClusters < 65525) {
 		fsi->type = FS_FAT16;
 	} else {
 		fsi->type = FS_FAT32;
@@ -68,29 +67,30 @@ FS_CurrentDir fs_get_root(FS_Instance * fat_fs) {
 
 }
 
+void loopPrintChar(uint8_t * str, int len) {
+	for (int i = 0; i < len; i++) {
+		printf("%c", str[i]);
+	}
+}
+
 void print_info(FS_Instance * fat_fs) {
 	fatBS * bs = fat_fs->bootsect;
-
+	printf("\n");
 	printf("Disk information:\n-----------------\n");
 	printf("OEM Name: ");
-	for (int i = 0; i < BS_OEMName_LENGTH; i++)
-		printf("%c", bs->BS_OEMName[i]);
+	loopPrintChar(&(bs->BS_OEMName[0]), BS_OEMName_LENGTH);
 	printf("\n");
 	printf("Volume Label: ");
-	for (int i = 0; i < BS_VolLab_LENGTH; i++) {
-		if (fat_fs->type == FS_FAT32)
-			printf("%c", fat_fs->bootsect32->BS_VolLab[i]);
-		else
-			printf("%c", fat_fs->bootsect16->BS_VolLab[i]);
-	}
+	if (fat_fs->type == FS_FAT32)
+		loopPrintChar(&(fat_fs->bootsect32->BS_VolLab[0]), BS_VolLab_LENGTH);
+	else
+		loopPrintChar(&(fat_fs->bootsect16->BS_VolLab[0]), BS_VolLab_LENGTH);
 	printf("\n");
-	printf("File System Type: ");
-	for (int i = 0; i < BS_FilSysType_LENGTH; i++) {
-		if (fat_fs->type == FS_FAT32)
-			printf("%c", fat_fs->bootsect32->BS_FilSysType[i]);
-		else
-			printf("%c", fat_fs->bootsect16->BS_FilSysType[i]);
-	}
+	printf("File System Type (read): ");
+	if (fat_fs->type == FS_FAT32)
+		loopPrintChar(&(fat_fs->bootsect32->BS_FilSysType[0]), BS_FilSysType_LENGTH);
+	else
+		loopPrintChar(&(fat_fs->bootsect16->BS_FilSysType[0]), BS_FilSysType_LENGTH);
 	printf("\n");
 	printf("Media Type: 0x%2X (%sremovable)\n", bs->BPB_Media, (bs->BPB_Media == 0xF8) ? "non-" : "");
 	const char * units[] = {"B", "kB", "MB", "GB", "TB"};
@@ -108,6 +108,19 @@ void print_info(FS_Instance * fat_fs) {
 	printf("Total Sectors: %d\n", fat_fs->numSectors);
 	printf("Physical - Sectors per Track: %d\n", bs->BPB_SecPerTrk);
 	printf("Physical - Heads: %d\n", bs->BPB_NumHeads);
+	printf("\n");
+	printf("File system info:\n-----------------\n");
+	printf("Volume ID: ");
+	if (fat_fs->type == FS_FAT32)
+		printf("%d", fat_fs->bootsect32->BS_VolID);
+	else
+		printf("%d", fat_fs->bootsect16->BS_VolID);
+	printf("\n");
+	printf("File System Type (computed): %s\n", typeNames[fat_fs->type]);
+	printf("FAT Size (sectors): %d\n", fat_fs->FATsz);
+	// read the FAT to figure out how much free space there is
+	printf("Free space: %d bytes\n", 0);
+	printf("\n");
 }
 
 void print_dir(FS_Instance * fat_fs, FS_CurrentDir current_dir) {

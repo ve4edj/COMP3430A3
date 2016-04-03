@@ -15,13 +15,16 @@ typedef enum {
 
 struct FS_Instance_struct {
 	FILE * disk;
+	fs_type type;
 	fatBS * bootsect;
 	fatBS16 * bootsect16;
 	fatBS32 * bootsect32;
 	uint32_t FATsz;
 	uint32_t numSectors;
 	uint64_t totalSize;
-	fs_type type;
+	uint64_t rootDirSectors;
+	uint64_t dataSec;
+	uint64_t countOfClusters;
 };
 
 typedef struct FS_Instance_struct FS_Instance;

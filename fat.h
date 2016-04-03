@@ -35,8 +35,8 @@ struct fatBS_struct {
 struct fatBS16_struct {
 	uint8_t BPB_DrvNum;
 	uint8_t BPB_Reserved1;
-	uint8_t BPB_BootSig;
-	uint32_t BPB_VolID;
+	uint8_t BS_BootSig;
+	uint32_t BS_VolID;
 	uint8_t BS_VolLab[BS_VolLab_LENGTH];
 	uint8_t BS_FilSysType[BS_FilSysType_LENGTH];
 	uint8_t BS_CodeReserved[448];
@@ -52,14 +52,14 @@ struct fatBS32_struct {
 	uint32_t BPB_RootClus;
 	uint16_t BPB_FSInfo;
 	uint16_t BPB_BkBootSec;
-	char BPB_reserved[12];
-	uint8_t BS_DrvNum;
-	uint8_t BS_Reserved1;
+	uint8_t BPB_reserved[12];
+	uint8_t BPB_DrvNum;
+	uint8_t BPB_Reserved1;
 	uint8_t BS_BootSig;
 	uint32_t BS_VolID;
-	char BS_VolLab[BS_VolLab_LENGTH];
-	char BS_FilSysType[BS_FilSysType_LENGTH];
-	char BS_CodeReserved[420];
+	uint8_t BS_VolLab[BS_VolLab_LENGTH];
+	uint8_t BS_FilSysType[BS_FilSysType_LENGTH];
+	uint8_t BS_CodeReserved[420];
 	uint8_t BS_SigA;
 	uint8_t BS_SigB;
 };

@@ -213,11 +213,11 @@ void put_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path, char * 
 
 }
 
-void make_dir(FS_Instance * fsi, FS_CurrentDir current_dir, char * path) {
+FS_CurrentDir make_dir(FS_Instance * fsi, FS_CurrentDir current_dir, char * path) {
 
 }
 
-void delete_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path) {
+FS_CurrentDir delete_file(FS_Instance * fsi, FS_CurrentDir current_dir, char * path) {
 
 }
 

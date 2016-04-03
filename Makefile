@@ -1,7 +1,7 @@
 #!/usr/bin/make
 
 PRGM   = fatshell
-SRCS   = shell.c fat_fs.c
+SRCS   = shell.c fat_fs.c fat_helpers.c
 LIBS   = 
 CFLAGS = -std=c99 -g -Wall
 

@@ -2,6 +2,7 @@
 #define FAT_FS_H
 
 #include <inttypes.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include "fat.h"
 
@@ -29,6 +30,7 @@ struct FS_Instance_struct {
 
 typedef struct FS_Instance_struct FS_Instance;
 typedef uint32_t FS_Directory;
+typedef uint32_t FS_FATEntry;
 
 FS_Instance * fs_create_instance(char * image_path);
 FS_Directory fs_get_root(FS_Instance * fsi);

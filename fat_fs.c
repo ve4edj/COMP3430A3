@@ -90,7 +90,7 @@ uint32_t getFATEntryForCluster(uint64_t cluster, FS_Instance * fsi) {
 	uint32_t sectorNum = getFATSectorNum(cluster, fsi);
 	uint32_t entOffset = getFATEntryOffset(cluster, fsi);
 	uint32_t bytesToRead = fsi->bootsect->BPB_BytsPerSec;
-	if ((fsi-> type == FS_FAT12) && (entOffset == (fsi->bootsect->BPB_BytsPerSec - 1)) && !((sectorNum - fsi->bootsect->BPB_RsvdSecCnt) == (fsi->FATsz - 1))) {
+	if ((fsi->type == FS_FAT12) && (entOffset == (fsi->bootsect->BPB_BytsPerSec - 1)) && !((sectorNum - fsi->bootsect->BPB_RsvdSecCnt) == (fsi->FATsz - 1))) {
 		bytesToRead *= 2;
 	}
 	uint8_t * FATSector = malloc(bytesToRead);
@@ -106,6 +106,17 @@ uint32_t getFATEntryForCluster(uint64_t cluster, FS_Instance * fsi) {
 			return (*((uint16_t *)&FATSector[entOffset]));
 		case FS_FAT32:
 			return ((*((uint32_t *)&FATSector[entOffset])) & 0x0FFFFFFF);
+	}
+}
+
+uint8_t isFATEntryEOF(uint32_t entry, FS_Instance * fsi) {
+	switch (fsi->type) {
+		case FS_FAT12:
+			return (entry >= 0x0FF8);
+		case FS_FAT16:
+			return (entry >= 0xFFF8);
+		case FS_FAT32:
+			return (entry >= 0x0FFFFFF8);
 	}
 }
 

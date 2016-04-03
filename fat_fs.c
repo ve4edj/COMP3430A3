@@ -82,6 +82,33 @@ uint32_t getFATEntryOffset(uint64_t cluster, FS_Instance * fsi) {
 	return (calcFATOffset(cluster, fsi) % fsi->bootsect->BPB_BytsPerSec);
 }
 
+uint64_t getFirstSectorOfCluster(uint64_t cluster, FS_Instance * fsi) {
+	return (((cluster - 2) * fsi->bootsect->BPB_SecPerClus) + fsi->dataSec);
+}
+
+uint32_t getFATEntryForCluster(uint64_t cluster, FS_Instance * fsi) {
+	uint32_t sectorNum = getFATSectorNum(cluster, fsi);
+	uint32_t entOffset = getFATEntryOffset(cluster, fsi);
+	uint32_t bytesToRead = fsi->bootsect->BPB_BytsPerSec;
+	if ((fsi-> type == FS_FAT12) && (entOffset == (fsi->bootsect->BPB_BytsPerSec - 1)) && !((sectorNum - fsi->bootsect->BPB_RsvdSecCnt) == (fsi->FATsz - 1))) {
+		bytesToRead *= 2;
+	}
+	uint8_t * FATSector = malloc(bytesToRead);
+	fseek(fsi->disk, (sectorNum * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+	fread(FATSector, bytesToRead, 1, fsi->disk);
+	switch (fsi->type) {
+		case FS_FAT12:
+			if (cluster % 2)
+				return ((*((uint16_t *)&FATSector[entOffset])) >> 4);
+			else
+				return ((*((uint16_t *)&FATSector[entOffset])) & 0x0FFF);
+		case FS_FAT16:
+			return (*((uint16_t *)&FATSector[entOffset]));
+		case FS_FAT32:
+			return ((*((uint32_t *)&FATSector[entOffset])) & 0x0FFFFFFF);
+	}
+}
+
 FS_CurrentDir fs_get_root(FS_Instance * fsi) {
 	switch (fsi->type) {
 		case FS_FAT12:
@@ -145,8 +172,13 @@ void print_info(FS_Instance * fsi) {
 	printf("\n");
 	printf("File System Type (computed): %s\n", typeNames[fsi->type]);
 	printf("FAT Size (sectors): %d\n", fsi->FATsz);
-	// read the FAT to figure out how much free space there is
-	printf("Free space: %d bytes\n", 0);
+	uint32_t freeClusters = 0;
+	for (int i = 0; i < fsi->countOfClusters; i++) {
+		if (getFATEntryForCluster(i, fsi) == 0) {
+			freeClusters++;
+		}
+	}
+	printf("Free space: %d bytes\n", freeClusters * fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec);
 	printf("\n");
 }
 

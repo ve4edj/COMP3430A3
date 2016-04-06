@@ -139,17 +139,6 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 			if (0x05 == entry->DIR_Name[0])
 				entry->DIR_Name[0] = 0xE5;
 			if (maskAndTest(entry->DIR_Attr, ATTR_LONG_NAME)) {
-				for (int i = 0; i < 32; ++i) {
-					printf("%02X  ", ((uint8_t *)entry)[i]);
-				}
-				printf("\n");
-				for (int i = 0; i < 32; ++i) {
-					if (0x20 < ((uint8_t *)entry)[i])
-						printf("  %c ", ((uint8_t *)entry)[i]);
-					else
-						printf("    ");
-				}
-				printf("\n\n");
 				fatLongName * ln = (fatLongName *)entry;
 				if (NULL == longName)
 					longName = calloc(getLongNameLength(ln) + 1, sizeof(uint16_t));

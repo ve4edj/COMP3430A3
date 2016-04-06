@@ -102,7 +102,7 @@ struct fatLongName_struct {
 	uint8_t LDIR_Type;
 	uint8_t LDIR_Chksum;
 	uint8_t LDIR_Name2[LDIR_Name2_LENGTH];
-	uint8_t LDIR_Zero;
+	uint16_t LDIR_Zero;
 	uint8_t LDIR_Name3[LDIR_Name3_LENGTH];
 };
 #pragma pack(pop)

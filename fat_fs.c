@@ -150,10 +150,10 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 		FS_Entry * ent = el->node;
 		uint8_t padding = 0;
 		for (int i = 0; i < DIR_Name_LENGTH; i++) {
-			if (' ' != ent->entry->DIR_Name[i])
-				printf("%c", ent->entry->DIR_Name[i]);
-			else
+			if (0x20 >= ent->entry->DIR_Name[i])
 				padding++;
+			else
+				printf("%c", ent->entry->DIR_Name[i]);
 			if (7 == i) {
 				if (' ' != ent->entry->DIR_Name[8])
 					printf(".");
@@ -188,7 +188,7 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 			printf(" ( ");
 			int idx = 0;
 			while (0x0000 != ent->filename[idx]) {
-				printf("%c", ent->filename[idx++] >> 8);
+				printf("%c", ent->filename[idx++] & 0x00FF);
 			}
 			printf(" )");
 		}

@@ -87,9 +87,9 @@ uint16_t getLongNameLetterAtPos(int pos, fatLongName * ln) {
 	if (pos < (LDIR_Name1_LENGTH / 2)) {
 		letter = ((uint16_t *)&ln->LDIR_Name1[0])[pos];
 	} else if (pos < ((LDIR_Name1_LENGTH + LDIR_Name2_LENGTH) / 2)) {
-		letter = ((uint16_t *)&ln->LDIR_Name2[0])[pos - LDIR_Name1_LENGTH];
+		letter = ((uint16_t *)&ln->LDIR_Name2[0])[pos - (LDIR_Name1_LENGTH / 2)];
 	} else if (pos < ((LDIR_Name1_LENGTH + LDIR_Name2_LENGTH + LDIR_Name3_LENGTH) / 2)) {
-		letter = ((uint16_t *)&ln->LDIR_Name3[0])[pos - LDIR_Name1_LENGTH - LDIR_Name2_LENGTH];
+		letter = ((uint16_t *)&ln->LDIR_Name3[0])[pos - (LDIR_Name1_LENGTH + LDIR_Name2_LENGTH) / 2];
 	}
 	return letter;
 }
@@ -98,9 +98,8 @@ uint8_t getLongNameLength(fatLongName * ln) {
 	if (maskAndTest(ln->LDIR_Ord, LAST_LONG_ENTRY)) {
 		uint8_t nameLen = ((ln->LDIR_Ord & ~(LAST_LONG_ENTRY)) - 1) * LDIR_LettersPerEntry;
 		for (int i = 0; i < LDIR_LettersPerEntry; i++) {
-			if (0x0000 == getLongNameLetterAtPos(i, ln)) {
-				return nameLen;
-			}
+			if (0x0000 == getLongNameLetterAtPos(i, ln))
+				break;
 			nameLen++;
 		}
 		return nameLen;
@@ -137,7 +136,20 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 				break;
 			if (0xE5 == entry->DIR_Name[0])
 				continue;
+			if (0x05 == entry->DIR_Name[0])
+				entry->DIR_Name[0] = 0xE5;
 			if (maskAndTest(entry->DIR_Attr, ATTR_LONG_NAME)) {
+				for (int i = 0; i < 32; ++i) {
+					printf("%02X  ", ((uint8_t *)entry)[i]);
+				}
+				printf("\n");
+				for (int i = 0; i < 32; ++i) {
+					if (0x20 < ((uint8_t *)entry)[i])
+						printf("  %c ", ((uint8_t *)entry)[i]);
+					else
+						printf("    ");
+				}
+				printf("\n\n");
 				fatLongName * ln = (fatLongName *)entry;
 				if (NULL == longName)
 					longName = calloc(getLongNameLength(ln) + 1, sizeof(uint16_t));
@@ -173,12 +185,3 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 	free(entries);
 	return listHead;
 }
-
-// code for following a cluster chain, may be useful later
-
-// uint32_t clusterToRead = (uint32_t)dir;
-// uint32_t clusterOffset = entry * sizeof(fatEntry);
-// while (clusterOffset >= fsi->bootsect->BPB_BytsPerSec) {
-// 	clusterToRead = getFATEntryForCluster(clusterToRead, fsi);
-// 	clusterOffset -= fsi->bootsect->BPB_BytsPerSec;
-// }

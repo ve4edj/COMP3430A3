@@ -124,7 +124,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 		return NULL;
 	uint16_t * longName = NULL;
 	FS_EntryList * listHead = NULL;
-	FS_EntryList 	* listTail = NULL;
+	FS_EntryList * listTail = NULL;
 	do {
 		uint64_t seekTo = dir;
 		if (!specialRootDir)

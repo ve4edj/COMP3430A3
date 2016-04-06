@@ -150,10 +150,20 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 		FS_Entry * ent = el->node;
 		uint8_t padding = 0;
 		for (int i = 0; i < DIR_Name_LENGTH; i++) {
-			if (0x20 >= ent->entry->DIR_Name[i])
+			if (0x20 > ent->entry->DIR_Name[i]) {
 				padding++;
-			else
-				printf("%c", ent->entry->DIR_Name[i]);
+			} else {
+				uint8_t isAllPadding = 1;
+				for (int j = i; j < ((i < 8) ? 8 : 11); j++) {
+					if (' ' != ent->entry->DIR_Name[j]) {
+						printf("%c", ent->entry->DIR_Name[i]);
+						isAllPadding = 0;
+						break;
+					}
+				}
+				if (isAllPadding)
+					padding++;
+			}
 			if (7 == i) {
 				if (' ' != ent->entry->DIR_Name[8])
 					printf(".");
@@ -205,7 +215,20 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 }
 
 FS_Directory change_dir(FS_Instance * fsi, FS_Directory current_dir, char * path) {
+																										// validate the filename
+	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
+	while (NULL != el) {
+		FS_Entry * ent = el->node;
+		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY)) {
 
+		}
+		FS_EntryList * toFree = el;
+		el = el->next;
+		free(toFree->node->filename);
+		free(toFree->node->entry);
+		free(toFree->node);
+		free(toFree);
+	}
 }
 
 void get_file(FS_Instance * fsi, FS_Directory current_dir, char * path, char * local_path) {

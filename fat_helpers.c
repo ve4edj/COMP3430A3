@@ -116,14 +116,14 @@ uint8_t isSpecialRootDir(FS_Cluster dir, FS_Instance * fsi) {
 }
 
 FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
-	uint32_t bytesPerCluster = fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
+	uint8_t specialRootDir = isSpecialRootDir(dir, fsi);
+	uint32_t bytesPerCluster = ((!specialRootDir) ? fsi->bootsect->BPB_SecPerClus : 1) * fsi->bootsect->BPB_BytsPerSec;
 	uint32_t entriesPerCluster = bytesPerCluster / sizeof(fatEntry);
 	fatEntry * entries = malloc(entriesPerCluster * sizeof(fatEntry));
 	if (NULL == entries)
 		return NULL;
 	uint16_t * longName = NULL;
 	FS_EntryList * listHead = NULL;
-	uint8_t specialRootDir = isSpecialRootDir(dir, fsi);
 	do {
 		uint64_t seekTo = dir;
 		if (!specialRootDir)
@@ -176,7 +176,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 			dir = getFATEntryForCluster(dir, fsi);
 		else
 			dir++;
-	} while (specialRootDir ? (dir < (fs_get_root(fsi) + (fsi->bootsect->BPB_RootEntCnt / entriesPerCluster))) : !isFATEntryEOF(dir, fsi));
+	} while (specialRootDir ? (dir < (fs_get_root(fsi) + fsi->rootDirSectors)) : !isFATEntryEOF(dir, fsi));
 	free(entries);
 	return listHead;
 }

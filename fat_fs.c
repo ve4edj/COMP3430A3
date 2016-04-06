@@ -165,7 +165,8 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 			printf(" ");
 		}
 		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) || maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID)) {
-			dirCount++;
+			if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY))
+				dirCount++;
 			printf("%25s", "");
 		} else {
 			fileCount++;
@@ -200,6 +201,7 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 		free(toFree->node);
 		free(toFree);
 	}
+	printf("\t%d file(s), %d folder(s)\n", fileCount, dirCount);
 }
 
 FS_Directory change_dir(FS_Instance * fsi, FS_Directory current_dir, char * path) {

@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
 				else if (strncmp(buffer, CMD_DEL, strlen(CMD_DEL)) == 0)
 					current_dir = delete_file(fat_fs, current_dir, arg1+1);
 				else if (NULL != arg2) {
+					*arg2 = '\0';
 					if (strncmp(buffer, CMD_GET, strlen(CMD_GET)) == 0)
 						get_file(fat_fs, current_dir, arg1+1, arg2+1);
 					else if (strncmp(buffer, CMD_PUT, strlen(CMD_PUT)) == 0)

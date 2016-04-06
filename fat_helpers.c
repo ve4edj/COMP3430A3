@@ -124,6 +124,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 		return NULL;
 	uint16_t * longName = NULL;
 	FS_EntryList * listHead = NULL;
+	FS_EntryList 	* listTail = NULL;
 	do {
 		uint64_t seekTo = dir;
 		if (!specialRootDir)
@@ -168,8 +169,12 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 				memcpy(listEntry->node->entry, entry, sizeof(fatEntry));
 				listEntry->node->filename = longName;
 				longName = NULL;
-				listEntry->next = listHead;
-				listHead = listEntry;
+				listEntry->next = NULL;
+				if (NULL != listTail)
+					listTail->next = listEntry;
+				listTail = listEntry;
+				if (NULL == listHead)
+					listHead = listEntry;
 			}
 		}
 		if (!specialRootDir)

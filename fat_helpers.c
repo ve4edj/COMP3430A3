@@ -109,6 +109,10 @@ uint8_t getLongNameStartPos(fatLongName * ln) {
 	return ((ln->LDIR_Ord & ~(LAST_LONG_ENTRY)) - 1) * LDIR_LettersPerEntry;
 }
 
+uint8_t isSpecialRootDir(FS_Cluster dir, FS_Instance * fsi) {
+	return ((fsi->type == FS_FAT12) || (fsi->type == FS_FAT16)) && (dir == fs_get_root(fsi));
+}
+
 FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 	uint32_t bytesPerCluster = fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
 	uint32_t entriesPerCluster = bytesPerCluster / sizeof(fatEntry);
@@ -117,11 +121,24 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 		return NULL;
 	uint16_t * longName = NULL;
 	FS_EntryList * listHead = NULL;
+	uint8_t specialRootDir = isSpecialRootDir(dir, fsi);
 	do {
-		fseek(fsi->disk, getFirstSectorOfCluster(dir, fsi), SEEK_SET);
+		uint64_t seekTo = dir;
+		if (!specialRootDir)
+			seekTo = getFirstSectorOfCluster(dir, fsi);
+		printf("Getting sector %llu for dir %d\n", seekTo, dir);
+		fseek(fsi->disk, (seekTo * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
 		fread(entries, sizeof(fatEntry), entriesPerCluster, fsi->disk);
 		for (int i = 0; i < entriesPerCluster; i++) {
-			fatEntry * entry = &entries[i];
+			fatEntry * entry = &(entries[i]);
+			for (int i = 0; i < 32; ++i) {
+				printf("%02X  ", ((uint8_t *)entry)[i]);
+			}
+			printf("\n");
+			for (int i = 0; i < 32; ++i) {
+				printf("  %c ", ((uint8_t *)entry)[i]);
+			}
+			printf("\n\n");
 			if (0x00 == entry->DIR_Name[0])
 				break;
 			if (0xE5 == entry->DIR_Name[0])
@@ -154,8 +171,11 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 				listHead = listEntry;
 			}
 		}
-		dir = getFATEntryForCluster(dir, fsi);
-	} while (!isFATEntryEOF(dir, fsi));
+		if (!specialRootDir)
+			dir = getFATEntryForCluster(dir, fsi);
+		else
+			dir++;
+	} while (specialRootDir ? (dir < (fs_get_root(fsi) + fsi->rootDirSectors)) : !isFATEntryEOF(dir, fsi));
 	free(entries);
 	return listHead;
 }

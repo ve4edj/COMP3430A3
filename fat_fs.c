@@ -144,12 +144,14 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
 	while (NULL != el) {
 		FS_Entry * ent = el->node;
-		printf("Long Name: ");
-		int idx = 0;
-		while (0x0000 != ent->filename[idx]) {
-			printf("%c", ent->filename[idx++] >> 8);
+		if (ent->filename) {
+			printf("Long Name: ");
+			int idx = 0;
+			while (0x0000 != ent->filename[idx]) {
+				printf("%c", ent->filename[idx++] >> 8);
+			}
+			printf("\n");
 		}
-		printf("\n");
 		printf("Short name: ");
 		loopPrintChar(ent->entry->DIR_Name, DIR_Name_LENGTH);
 		printf("\n\n");

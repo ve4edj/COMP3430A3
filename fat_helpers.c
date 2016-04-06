@@ -95,10 +95,10 @@ uint8_t getLongNameLength(fatLongName * ln) {
 	if (maskAndTest(ln->LDIR_Ord, LAST_LONG_ENTRY)) {
 		uint8_t nameLen = ((ln->LDIR_Ord & ~(LAST_LONG_ENTRY)) - 1) * LDIR_LettersPerEntry;
 		for (int i = 0; i < LDIR_LettersPerEntry; i++) {
-			nameLen++;
 			if (0x0000 == getLongNameLetterAtPos(i, ln)) {
 				return nameLen;
 			}
+			nameLen++;
 		}
 		return nameLen;
 	}
@@ -122,10 +122,14 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 		fread(entries, sizeof(fatEntry), entriesPerCluster, fsi->disk);
 		for (int i = 0; i < entriesPerCluster; i++) {
 			fatEntry * entry = &entries[i];
+			if (0x00 == entry->DIR_Name[0])
+				break;
+			if (0xE5 == entry->DIR_Name[0])
+				continue;
 			if (maskAndTest(entry->DIR_Attr, ATTR_LONG_NAME)) {
 				fatLongName * ln = (fatLongName *)entry;
 				if (NULL == longName)
-					longName = malloc(sizeof(uint16_t) * getLongNameLength(ln));
+					longName = calloc(getLongNameLength(ln) + 1, sizeof(uint16_t));
 				if (NULL == longName)
 					return NULL;															// should do some cleanup here
 																							// check the type and verify the checksum here
@@ -143,7 +147,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 				listEntry->node->entry = malloc(sizeof(fatEntry));
 				if (NULL == listEntry->node->entry)
 					return NULL;															// should do some cleanup here
-				memcpy(listEntry->node->entry, &entries[i], sizeof(fatEntry));
+				memcpy(listEntry->node->entry, entry, sizeof(fatEntry));
 				listEntry->node->filename = longName;
 				longName = NULL;
 				listEntry->next = listHead;
@@ -153,6 +157,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 		dir = getFATEntryForCluster(dir, fsi);
 	} while (!isFATEntryEOF(dir, fsi));
 	free(entries);
+	return listHead;
 }
 
 // code for following a cluster chain, may be useful later

@@ -144,11 +144,26 @@ void print_info(FS_Instance * fsi) {
 void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 	uint16_t dirCount = 0, fileCount = 0;
 	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
-	printf("%11s%25s%6s\n", "Name   ", "Size          ", "Flags");
-	printf("-------------------------------------------\n");
+	printf("%11s%26s%6s\n", "Name   ", "Size          ", "Flags");
+	printf("--------------------------------------------\n");
 	while (NULL != el) {
 		FS_Entry * ent = el->node;
-		loopPrintChar(ent->entry->DIR_Name, DIR_Name_LENGTH);
+		uint8_t padding = 0;
+		for (int i = 0; i < DIR_Name_LENGTH; i++) {
+			if (' ' != ent->entry->DIR_Name[i])
+				printf("%c", ent->entry->DIR_Name[i]);
+			else
+				padding++;
+			if (7 == i) {
+				if (' ' != ent->entry->DIR_Name[8])
+					printf(".");
+				else
+					padding++;
+			}
+		}
+		for (int i = 0; i < padding; i++) {
+			printf(" ");
+		}
 		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY)) {
 			dirCount++;
 			printf("%25s", "");
@@ -156,7 +171,7 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 			fileCount++;
 			long double scaledSz = ent->entry->DIR_FileSize;
 			int theUnit = scaleFileSize(&scaledSz);
-			printf("%12llu (%7.3Lf %2s)", ent->entry->DIR_FileSize, scaledSz, units[theUnit]);
+			printf("%12u (%7.3Lf %2s)", ent->entry->DIR_FileSize, scaledSz, units[theUnit]);
 		}
 		printf(" ");
 		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID) ? "V" : " ");

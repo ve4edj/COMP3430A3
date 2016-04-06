@@ -44,10 +44,13 @@ FS_FATEntry getFATEntryForCluster(FS_Cluster cluster, FS_Instance * fsi) {
 				entry = ((*((uint16_t *)&FATSector[entOffset])) >> 4);
 			else
 				entry = ((*((uint16_t *)&FATSector[entOffset])) & 0x0FFF);
+			break;
 		case FS_FAT16:
 			entry = (*((uint16_t *)&FATSector[entOffset]));
+			break;
 		case FS_FAT32:
 			entry = ((*((uint32_t *)&FATSector[entOffset])) & 0x0FFFFFFF);
+			break;
 	}
 	free(FATSector);
 	return entry;

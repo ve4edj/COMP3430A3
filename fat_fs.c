@@ -77,6 +77,16 @@ FS_Directory fs_get_root(FS_Instance * fsi) {
 
 void loopPrintChar(uint8_t * str, int len) { for (int i = 0; i < len; printf("%c", str[i++])); }
 
+const char * units[] = {"B", "kB", "MB", "GB", "TB"};
+uint8_t scaleFileSize(long double * scaledSz) {
+	int currUnit = 0;
+	while (((long long)(*scaledSz / 1024)) > 0) {
+		*scaledSz /= 1024;
+		currUnit++;
+	}
+	return currUnit;
+}
+
 void print_info(FS_Instance * fsi) {
 	fatBS * bs = fsi->bootsect;
 	printf("\n");
@@ -97,14 +107,9 @@ void print_info(FS_Instance * fsi) {
 		loopPrintChar(&(fsi->bootsect16->BS_FilSysType[0]), BS_FilSysType_LENGTH);
 	printf("\n");
 	printf("Media Type: 0x%2X (%sremovable)\n", bs->BPB_Media, (bs->BPB_Media == 0xF8) ? "non-" : "");
-	const char * units[] = {"B", "kB", "MB", "GB", "TB"};
-	int currUnit = 0;
 	long double scaledSz = fsi->totalSize;
-	while (((long long)(scaledSz / 1024)) > 0) {
-		scaledSz /= 1024;
-		currUnit++;
-	}
-	printf("Size: %llu bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[currUnit]);
+	int theUnit = scaleFileSize(&scaledSz);
+	printf("Size: %llu bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[theUnit]);
 	printf("\n");
 	printf("Disk geometry:\n--------------\n");
 	printf("Bytes Per Sector: %d\n", bs->BPB_BytsPerSec);
@@ -137,10 +142,30 @@ void print_info(FS_Instance * fsi) {
 }
 
 void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
+	uint16_t dirCount = 0, fileCount = 0;
 	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
+	printf("%11s%25s%6s\n", "Name   ", "Size          ", "Flags");
+	printf("-------------------------------------------\n");
 	while (NULL != el) {
 		FS_Entry * ent = el->node;
 		loopPrintChar(ent->entry->DIR_Name, DIR_Name_LENGTH);
+		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY)) {
+			dirCount++;
+			printf("%25s", "");
+		} else {
+			fileCount++;
+			long double scaledSz = ent->entry->DIR_FileSize;
+			int theUnit = scaleFileSize(&scaledSz);
+			printf("%12llu (%7.3Lf %2s)", ent->entry->DIR_FileSize, scaledSz, units[theUnit]);
+		}
+		printf(" ");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID) ? "V" : " ");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) ? "D" : " ");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_ARCHIVE)   ? "A" : " ");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_SYSTEM)    ? "S" : " ");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_HIDDEN)    ? "H" : " ");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_READ_ONLY) ? "R" : " ");
+		printf(" ");
 		if (ent->filename) {
 			printf(" ( ");
 			int idx = 0;

@@ -144,8 +144,8 @@ void print_info(FS_Instance * fsi) {
 void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 	uint16_t dirCount = 0, fileCount = 0;
 	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
-	printf("%11s%26s%6s\n", "Name   ", "Size          ", "Flags");
-	printf("--------------------------------------------\n");
+	printf("%11s%26s%7s%20s\n", "Name   ", "Size          ", "Flags ", "Modified Date   ");
+	printf("----------------------------------------------------------------\n");
 	while (NULL != el) {
 		FS_Entry * ent = el->node;
 		uint8_t padding = 0;
@@ -181,6 +181,9 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_HIDDEN)    ? "H" : "-");
 		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_READ_ONLY) ? "R" : "-");
 		printf(" ");
+		fatDate * cDate = &(ent->entry->DIR_WrtDate);
+		fatTime * cTime = &(ent->entry->DIR_WrtTime);
+		printf("%04d/%02d/%02d %02d:%02d:%02d", cDate->year + 1980, cDate->month, cDate->day, cTime->hour, cTime->min, (cTime->sec * 2) + (ent->entry->DIR_CrtTimeTenth / 2));
 		if (ent->filename) {
 			printf(" ( ");
 			int idx = 0;

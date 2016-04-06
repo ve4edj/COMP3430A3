@@ -126,19 +126,10 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 		uint64_t seekTo = dir;
 		if (!specialRootDir)
 			seekTo = getFirstSectorOfCluster(dir, fsi);
-		printf("Getting sector %llu for dir %d\n", seekTo, dir);
 		fseek(fsi->disk, (seekTo * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
 		fread(entries, sizeof(fatEntry), entriesPerCluster, fsi->disk);
 		for (int i = 0; i < entriesPerCluster; i++) {
 			fatEntry * entry = &(entries[i]);
-			for (int i = 0; i < 32; ++i) {
-				printf("%02X  ", ((uint8_t *)entry)[i]);
-			}
-			printf("\n");
-			for (int i = 0; i < 32; ++i) {
-				printf("  %c ", ((uint8_t *)entry)[i]);
-			}
-			printf("\n\n");
 			if (0x00 == entry->DIR_Name[0])
 				break;
 			if (0xE5 == entry->DIR_Name[0])

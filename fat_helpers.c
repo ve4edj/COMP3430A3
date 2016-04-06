@@ -150,6 +150,12 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 					longName[startPos + i] = getLongNameLetterAtPos(i, ln);
 				}
 			} else {
+				uint8_t validEntry = 1;
+				for (int j = 0; j < DIR_Name_LENGTH; j++)
+					if (0x20 > entry->DIR_Name[j])
+						validEntry = 0;
+				if (!validEntry)
+					continue;
 				FS_EntryList * listEntry = malloc(sizeof(FS_EntryList));
 				if (NULL == listEntry)
 					return NULL;															// should do some cleanup here
@@ -170,7 +176,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 			dir = getFATEntryForCluster(dir, fsi);
 		else
 			dir++;
-	} while (specialRootDir ? (dir < (fs_get_root(fsi) + fsi->rootDirSectors)) : !isFATEntryEOF(dir, fsi));
+	} while (specialRootDir ? (dir < (fs_get_root(fsi) + (fsi->bootsect->BPB_RootEntCnt / entriesPerCluster))) : !isFATEntryEOF(dir, fsi));
 	free(entries);
 	return listHead;
 }

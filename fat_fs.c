@@ -112,23 +112,23 @@ void print_info(FS_Instance * fsi) {
 	printf("Size: %llu bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[theUnit]);
 	printf("\n");
 	printf("Disk geometry:\n--------------\n");
-	printf("Bytes Per Sector: %d\n", bs->BPB_BytsPerSec);
-	printf("Sectors Per Cluster: %d\n", bs->BPB_SecPerClus);
-	printf("Total Sectors: %d\n", fsi->numSectors);
-	printf("Physical - Sectors per Track: %d\n", bs->BPB_SecPerTrk);
-	printf("Physical - Heads: %d\n", bs->BPB_NumHeads);
+	printf("Bytes Per Sector: %u\n", bs->BPB_BytsPerSec);
+	printf("Sectors Per Cluster: %u\n", bs->BPB_SecPerClus);
+	printf("Total Sectors: %u\n", fsi->numSectors);
+	printf("Physical - Sectors per Track: %u\n", bs->BPB_SecPerTrk);
+	printf("Physical - Heads: %u\n", bs->BPB_NumHeads);
 	printf("\n");
 	printf("File system info:\n-----------------\n");
 	printf("Volume ID: ");
 	if (fsi->type == FS_FAT32)
-		printf("%d", fsi->bootsect32->BS_VolID);
+		printf("%lu", fsi->bootsect32->BS_VolID);
 	else
-		printf("%d", fsi->bootsect16->BS_VolID);
+		printf("%lu", fsi->bootsect16->BS_VolID);
 	printf("\n");
 	printf("File System Type (computed): %s\n", typeNames[fsi->type]);
-	printf("FAT Size (sectors): %d\n", fsi->FATsz);
-	printf("Number of FATs: %d\n", fsi->bootsect->BPB_NumFATs);
-	printf("Reserved sectors: %d\n", fsi->bootsect->BPB_RsvdSecCnt);
+	printf("FAT Size (sectors): %u\n", fsi->FATsz);
+	printf("Number of FATs: %u\n", fsi->bootsect->BPB_NumFATs);
+	printf("Reserved sectors: %u\n", fsi->bootsect->BPB_RsvdSecCnt);
 	printf("Root directory sectors: %llu\n", fsi->rootDirSectors);
 	printf("Data clusters: %llu\n", fsi->countOfClusters);
 	uint32_t freeClusters = 0;

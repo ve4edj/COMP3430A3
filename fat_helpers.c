@@ -147,11 +147,11 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 																							// check the type and verify the checksum here
 				uint8_t startPos = getLongNameStartPos(ln);
 				for (int i = 0; i < LDIR_LettersPerEntry; i++) {
-					longName[startPos + i] = getLongNameLetterAtPos(i, ln);
+					longName[startPos + i] = getLongNameLetterAtPos(i, ln);					// validate the characters
 				}
 			} else {
 				uint8_t validEntry = 1;
-				for (int j = 0; j < DIR_Name_LENGTH; j++)
+				for (int j = 0; j < DIR_Name_LENGTH; j++)									// check for the other invalid characters too
 					if (0x20 > entry->DIR_Name[j])
 						validEntry = 0;
 				if (!validEntry)

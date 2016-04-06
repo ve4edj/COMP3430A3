@@ -72,6 +72,7 @@ FS_Directory fs_get_root(FS_Instance * fsi) {
 			return fsi->bootsect32->BPB_RootClus;
 			break;
 	}
+	return 0x00000000;
 }
 
 void loopPrintChar(uint8_t * str, int len) {

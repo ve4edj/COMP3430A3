@@ -141,39 +141,34 @@ void print_info(FS_Instance * fsi) {
 	printf("\n");
 }
 
+char * getFilenameForEntry(fatEntry * ent) {
+	char * filename = malloc(sizeof(char) * (DIR_Name_LENGTH + 2));
+	if (NULL != filename) {
+		int i = 0, j = 0;
+		while (j < DIR_Name_LENGTH) {
+			if (0x20 <= ent->DIR_Name[j]) {
+				if (' ' != ent->DIR_Name[j])
+					filename[i++] = ent->DIR_Name[j];
+			}
+			if ((7 == j) && (' ' != ent->DIR_Name[8]))
+				filename[i++] = '.';
+			j++;
+		}
+		filename[i] = '\0';
+	}
+	return filename;
+}
+
 void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 	uint16_t dirCount = 0, fileCount = 0;
 	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
-	printf("%11s%26s%7s%20s\n", "Name   ", "Size          ", "Flags ", "Modified Date   ");
+	printf("%12s%25s%7s%20s\n", "Name    ", "Size         ", "Flags ", "Modified Date   ");
 	printf("----------------------------------------------------------------\n");
 	while (NULL != el) {
 		FS_Entry * ent = el->node;
-		uint8_t padding = 0;
-		for (int i = 0; i < DIR_Name_LENGTH; i++) {
-			if (0x20 > ent->entry->DIR_Name[i]) {
-				padding++;
-			} else {
-				uint8_t isAllPadding = 1;
-				for (int j = i; j < ((i < 8) ? 8 : 11); j++) {
-					if (' ' != ent->entry->DIR_Name[j]) {
-						printf("%c", ent->entry->DIR_Name[i]);
-						isAllPadding = 0;
-						break;
-					}
-				}
-				if (isAllPadding)
-					padding++;
-			}
-			if (7 == i) {
-				if (' ' != ent->entry->DIR_Name[8])
-					printf(".");
-				else
-					padding++;
-			}
-		}
-		for (int i = 0; i < padding; i++) {
-			printf(" ");
-		}
+		char * filename = getFilenameForEntry(ent->entry);
+		printf("%-12s", filename);
+		free(filename);
 		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) || maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID)) {
 			if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY))
 				dirCount++;

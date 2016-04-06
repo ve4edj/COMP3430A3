@@ -164,7 +164,7 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 		for (int i = 0; i < padding; i++) {
 			printf(" ");
 		}
-		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY)) {
+		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) || maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID)) {
 			dirCount++;
 			printf("%25s", "");
 		} else {

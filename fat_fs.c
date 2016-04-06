@@ -174,12 +174,12 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 			printf("%12u (%7.3Lf %2s)", ent->entry->DIR_FileSize, scaledSz, units[theUnit]);
 		}
 		printf(" ");
-		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID) ? "V" : " ");
-		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) ? "D" : " ");
-		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_ARCHIVE)   ? "A" : " ");
-		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_SYSTEM)    ? "S" : " ");
-		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_HIDDEN)    ? "H" : " ");
-		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_READ_ONLY) ? "R" : " ");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID) ? "V" : "-");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) ? "D" : "-");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_ARCHIVE)   ? "A" : "-");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_SYSTEM)    ? "S" : "-");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_HIDDEN)    ? "H" : "-");
+		printf(maskAndTest(ent->entry->DIR_Attr, ATTR_READ_ONLY) ? "R" : "-");
 		printf(" ");
 		if (ent->filename) {
 			printf(" ( ");

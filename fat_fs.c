@@ -75,11 +75,7 @@ FS_Directory fs_get_root(FS_Instance * fsi) {
 	return 0x00000000;
 }
 
-void loopPrintChar(uint8_t * str, int len) {
-	for (int i = 0; i < len; i++) {
-		printf("%c", str[i]);
-	}
-}
+void loopPrintChar(uint8_t * str, int len) { for (int i = 0; i < len; printf("%c", str[i++])); }
 
 void print_info(FS_Instance * fsi) {
 	fatBS * bs = fsi->bootsect;

@@ -148,7 +148,14 @@ char * getFilenameForEntry(fatEntry * ent) {
 		int i = 0, j = 0;
 		while (j < DIR_Name_LENGTH) {
 			if (0x20 <= ent->DIR_Name[j]) {
-				if (' ' != ent->DIR_Name[j])
+				uint8_t isPadding = 1;
+				for (int k = j; k < ((j < 8) ? 8 : 11); k++) {
+					if (' ' != ent->DIR_Name[k]) {
+						isPadding = 0;
+						break;
+					}
+				}
+				if (!isPadding)
 					filename[i++] = ent->DIR_Name[j];
 			}
 			if ((7 == j) && (' ' != ent->DIR_Name[8]))

@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 			else if (strncmp(buffer, CMD_DIR, strlen(CMD_DIR)) == 0)
 				print_dir(fat_fs, current_dir);
 			else if (NULL != arg1) {
-				arg2 = strchr(arg1, ' ');
+				arg2 = strchr(arg1+1, ' ');
 				if (strncmp(buffer, CMD_CD, strlen(CMD_CD)) == 0) {
 					FS_Directory temp_dir = change_dir(fat_fs, current_dir, arg1+1);
 					if (temp_dir == 0x00000001)

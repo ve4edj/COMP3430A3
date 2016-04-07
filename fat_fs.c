@@ -168,8 +168,7 @@ char * getFilenameForEntry(fatEntry * ent) {
 }
 
 void freeFSEntryListItem(FS_EntryList * toFree) {
-	if (NULL != toFree->node->filename)
-		free(toFree->node->filename);
+	free(toFree->node->filename);
 	free(toFree->node->entry);
 	free(toFree->node);
 	free(toFree);
@@ -256,7 +255,39 @@ FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 }
 
 void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {
-
+	FS_Cluster file = 0x00000001;
+	uint32_t fileSz = 0;
+	FS_EntryList * el = getDirListing((FS_Cluster)currDir, fsi);
+	uint8_t found = 0;
+	while (NULL != el) {
+		FS_Entry * ent = el->node;
+		if ((0 == found) && !maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) && !maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID)) {
+			char * filename = getFilenameForEntry(ent->entry);
+			if (strcmp(path, filename) == 0) {
+				found = 1;
+				file = (ent->entry->DIR_FstClusHI << 8) + ent->entry->DIR_FstClusLO;
+				fileSz = ent->entry->DIR_FileSize;
+			}
+			free(filename);
+		}
+		FS_EntryList * toFree = el;
+		el = el->next;
+		freeFSEntryListItem(toFree);
+	}
+	FILE * localFile = fopen(localPath, "w");
+	if (found && (NULL != localFile)) {
+		do {
+			size_t bytesToRead = sizeof(uint8_t) * fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
+			if (bytesToRead > fileSz)
+				bytesToRead = fileSz;
+			fileSz -= bytesToRead;
+			uint8_t * cluster = malloc(sizeof(uint8_t) * bytesToRead);
+			fseek(fsi->disk, (getFirstSectorOfCluster(file, fsi) * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+			fread(cluster, sizeof(uint8_t), bytesToRead, fsi->disk);
+			fwrite(cluster, sizeof(uint8_t), bytesToRead, localFile);
+			file = getFATEntryForCluster(file, fsi);
+		} while (!isFATEntryEOF(file, fsi));
+	}
 }
 
 void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {

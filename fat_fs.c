@@ -171,7 +171,7 @@ void print_dir(FS_Instance * fsi, FS_Directory currDir) {
 		printf("%-12s", filename);
 		free(filename);
 		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) || maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID)) {
-			if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY))
+			if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) && (('.' != ent->entry->DIR_Name[0]) || (('.' == ent->entry->DIR_Name[0]) && ('.' != ent->entry->DIR_Name[1]) && (' ' != ent->entry->DIR_Name[1]))))
 				dirCount++;
 			printf("%25s", "");
 		} else {
@@ -219,11 +219,13 @@ FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 	while (NULL != toke) {
 		currDir = dir;
 		FS_EntryList * el = getDirListing((FS_Cluster)dir, fsi);
+		uint8_t found = 0;
 		while (NULL != el) {
 			FS_Entry * ent = el->node;
 			if ((currDir == dir) && (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY))) {
 				char * filename = getFilenameForEntry(ent->entry);
 				if (strcmp(toke, filename) == 0) {
+					found = 1;
 					dir = (ent->entry->DIR_FstClusHI << 8) + ent->entry->DIR_FstClusLO;
 				}
 				free(filename);
@@ -235,8 +237,8 @@ FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 			free(toFree->node);
 			free(toFree);
 		}
-		if (currDir == dir) {
-			dir = origDir;
+		if (!found) {
+			dir = 0x00000001;
 			break;
 		}
 		toke = strtok(NULL, "/\\");

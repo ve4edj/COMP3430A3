@@ -182,7 +182,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 			dir = getFATEntryForCluster(dir, fsi);
 		else
 			dir++;
-	} while (specialRootDir ? (dir < (fs_get_root(fsi) + fsi->rootDirSectors)) : !isFATEntryEOF(dir, fsi));
+	} while (specialRootDir ? (dir < (fsi->rootDirPos + fsi->rootDirSectors)) : !isFATEntryEOF(dir, fsi));
 	free(entries);
 	return listHead;
 }

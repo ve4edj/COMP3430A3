@@ -50,6 +50,7 @@ FS_Instance * fs_create_instance(char * image_path) {
 	fsi->rootDirSectors = ((fsi->bootsect->BPB_RootEntCnt * 32) + (fsi->bootsect->BPB_BytsPerSec - 1)) / fsi->bootsect->BPB_BytsPerSec;
 	fsi->dataSec = (fsi->bootsect->BPB_RsvdSecCnt + (fsi->bootsect->BPB_NumFATs * fsi->FATsz) + fsi->rootDirSectors);
 	fsi->countOfClusters = (fsi->numSectors - fsi->dataSec) / fsi->bootsect->BPB_SecPerClus;
+	fsi->rootDirPos = fsi->bootsect->BPB_RsvdSecCnt + (fsi->bootsect->BPB_NumFATs * fsi->FATsz);
 
 	if (fsi->countOfClusters < 4085) {
 		fsi->type = FS_FAT12;
@@ -66,7 +67,7 @@ FS_Directory fs_get_root(FS_Instance * fsi) {
 	switch (fsi->type) {
 		case FS_FAT12:
 		case FS_FAT16:
-			return (fsi->bootsect->BPB_RsvdSecCnt + (fsi->bootsect->BPB_NumFATs * fsi->FATsz));
+			return 0x00000000;
 			break;
 		case FS_FAT32:
 			return fsi->bootsect32->BPB_RootClus;
@@ -211,11 +212,16 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 
 FS_Directory change_dir(FS_Instance * fsi, FS_Directory current_dir, char * path) {
 																										// validate the filename
+	FS_Directory dir = 0x00000001;
 	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
 	while (NULL != el) {
 		FS_Entry * ent = el->node;
-		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY)) {
-
+		if ((0x00000001 == dir) && (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY))) {
+			char * filename = getFilenameForEntry(ent->entry);
+			if (strcasecmp(path, filename) == 0) {
+				dir = (ent->entry->DIR_FstClusHI << 8) + ent->entry->DIR_FstClusLO;
+			}
+			free(filename);
 		}
 		FS_EntryList * toFree = el;
 		el = el->next;
@@ -224,6 +230,7 @@ FS_Directory change_dir(FS_Instance * fsi, FS_Directory current_dir, char * path
 		free(toFree->node);
 		free(toFree);
 	}
+	return dir;
 }
 
 void get_file(FS_Instance * fsi, FS_Directory current_dir, char * path, char * local_path) {

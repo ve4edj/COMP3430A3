@@ -14,6 +14,10 @@ typedef enum {
 	FS_FAT32 = 2
 } fs_type;
 
+typedef uint32_t FS_Directory;
+typedef uint32_t FS_FATEntry;
+typedef uint32_t FS_Cluster;
+
 struct FS_Instance_struct {
 	FILE * disk;
 	fs_type type;
@@ -26,6 +30,7 @@ struct FS_Instance_struct {
 	uint64_t rootDirSectors;
 	uint64_t dataSec;
 	uint64_t countOfClusters;
+	FS_Directory rootDirPos;
 };
 
 struct FS_Entry_struct {
@@ -41,9 +46,6 @@ struct FS_EntryList_struct {
 typedef struct FS_Instance_struct FS_Instance;
 typedef struct FS_Entry_struct FS_Entry;
 typedef struct FS_EntryList_struct FS_EntryList;
-typedef uint32_t FS_Directory;
-typedef uint32_t FS_FATEntry;
-typedef uint32_t FS_Cluster;
 
 FS_Instance * fs_create_instance(char * image_path);
 FS_Directory fs_get_root(FS_Instance * fsi);

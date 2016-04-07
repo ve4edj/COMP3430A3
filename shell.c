@@ -59,8 +59,13 @@ int main(int argc, char *argv[]) {
 				print_dir(fat_fs, current_dir);
 			else if (NULL != arg1) {
 				arg2 = strchr(arg1, ' ');
-				if (strncmp(buffer, CMD_CD, strlen(CMD_CD)) == 0)
-					current_dir = change_dir(fat_fs, current_dir, arg1+1);
+				if (strncmp(buffer, CMD_CD, strlen(CMD_CD)) == 0) {
+					FS_Directory temp_dir = change_dir(fat_fs, current_dir, arg1+1);
+					if (temp_dir == 0x00000001)
+						printf("Directory '%s' not found\n", arg1+1);
+					else
+						current_dir = temp_dir;
+				}
 				else if (strncmp(buffer, CMD_MD, strlen(CMD_MD)) == 0)
 					current_dir = make_dir(fat_fs, current_dir, arg1+1);
 				else if (strncmp(buffer, CMD_DEL, strlen(CMD_DEL)) == 0)

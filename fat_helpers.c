@@ -112,7 +112,7 @@ uint8_t getLongNameStartPos(fatLongName * ln) {
 }
 
 uint8_t isSpecialRootDir(FS_Cluster dir, FS_Instance * fsi) {
-	return ((fsi->type == FS_FAT12) || (fsi->type == FS_FAT16)) && (dir == fs_get_root(fsi));
+	return ((fsi->type == FS_FAT12) || (fsi->type == FS_FAT16)) && (dir == 0x00000000);
 }
 
 FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
@@ -125,6 +125,8 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 	uint16_t * longName = NULL;
 	FS_EntryList * listHead = NULL;
 	FS_EntryList * listTail = NULL;
+	if (specialRootDir)
+		dir = fsi->rootDirPos;
 	do {
 		uint64_t seekTo = dir;
 		if (!specialRootDir)

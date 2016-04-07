@@ -1,5 +1,4 @@
 #include "fat_helpers.h"
-#include <string.h>
 
 uint64_t calcFATOffset(FS_Cluster cluster, FS_Instance * fsi) {
 	switch (fsi->type) {

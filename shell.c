@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
 				arg2 = strchr(arg1, ' ');
 				if (strncmp(buffer, CMD_CD, strlen(CMD_CD)) == 0) {
 					FS_Directory temp_dir = change_dir(fat_fs, current_dir, arg1+1);
-					if (temp_dir == 0x00000001)
+					if (temp_dir == current_dir)
 						printf("Directory '%s' not found\n", arg1+1);
 					else
 						current_dir = temp_dir;

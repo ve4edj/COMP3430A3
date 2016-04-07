@@ -1,4 +1,5 @@
 #include <inttypes.h>
+#include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "fat_fs.h"

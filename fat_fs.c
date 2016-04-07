@@ -160,9 +160,9 @@ char * getFilenameForEntry(fatEntry * ent) {
 	return filename;
 }
 
-void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
+void print_dir(FS_Instance * fsi, FS_Directory currDir) {
 	uint16_t dirCount = 0, fileCount = 0;
-	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
+	FS_EntryList * el = getDirListing((FS_Cluster)currDir, fsi);
 	printf("%12s%25s%7s%20s\n", "Name    ", "Size         ", "Flags ", "Modified Date   ");
 	printf("----------------------------------------------------------------\n");
 	while (NULL != el) {
@@ -210,42 +210,54 @@ void print_dir(FS_Instance * fsi, FS_Directory current_dir) {
 	printf("\t%d file(s), %d folder(s)\n", fileCount, dirCount);
 }
 
-FS_Directory change_dir(FS_Instance * fsi, FS_Directory current_dir, char * path) {
+FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
+	char * pathCopy = strdup(path);
+	FS_Directory origDir = currDir;
 																										// validate the filename
-	FS_Directory dir = 0x00000001;
-	FS_EntryList * el = getDirListing((FS_Cluster)current_dir, fsi);
-	while (NULL != el) {
-		FS_Entry * ent = el->node;
-		if ((0x00000001 == dir) && (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY))) {
-			char * filename = getFilenameForEntry(ent->entry);
-			if (strcasecmp(path, filename) == 0) {
-				dir = (ent->entry->DIR_FstClusHI << 8) + ent->entry->DIR_FstClusLO;
+	char * toke = strtok(pathCopy, "/\\");
+	FS_Directory dir = currDir;
+	while (NULL != toke) {
+		currDir = dir;
+		FS_EntryList * el = getDirListing((FS_Cluster)dir, fsi);
+		while (NULL != el) {
+			FS_Entry * ent = el->node;
+			if ((currDir == dir) && (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY))) {
+				char * filename = getFilenameForEntry(ent->entry);
+				if (strcmp(toke, filename) == 0) {
+					dir = (ent->entry->DIR_FstClusHI << 8) + ent->entry->DIR_FstClusLO;
+				}
+				free(filename);
 			}
-			free(filename);
+			FS_EntryList * toFree = el;
+			el = el->next;
+			free(toFree->node->filename);
+			free(toFree->node->entry);
+			free(toFree->node);
+			free(toFree);
 		}
-		FS_EntryList * toFree = el;
-		el = el->next;
-		free(toFree->node->filename);
-		free(toFree->node->entry);
-		free(toFree->node);
-		free(toFree);
+		if (currDir == dir) {
+			dir = origDir;
+			break;
+		}
+		toke = strtok(NULL, "/\\");
 	}
+	free(pathCopy);
 	return dir;
 }
 
-void get_file(FS_Instance * fsi, FS_Directory current_dir, char * path, char * local_path) {
+void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local_path) {
 
 }
 
-void put_file(FS_Instance * fsi, FS_Directory current_dir, char * path, char * local_path) {
+void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local_path) {
 
 }
 
-FS_Directory make_dir(FS_Instance * fsi, FS_Directory current_dir, char * path) {
+FS_Directory make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 
 }
 
-FS_Directory delete_file(FS_Instance * fsi, FS_Directory current_dir, char * path) {
+FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path) {
 
 }
 

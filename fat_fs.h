@@ -48,14 +48,14 @@ typedef struct FS_Instance_struct FS_Instance;
 typedef struct FS_Entry_struct FS_Entry;
 typedef struct FS_EntryList_struct FS_EntryList;
 
-FS_Instance * fs_create_instance(char * image_path);
+FS_Instance * fs_create_instance(char * imagePath);
 FS_Directory fs_get_root(FS_Instance * fsi);
 
 void print_info(FS_Instance * fsi);
 void print_dir(FS_Instance * fsi, FS_Directory currDir);
 FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
-void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local_path);
-void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local_path);
+void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
+void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
 FS_Directory make_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path);
 

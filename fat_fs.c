@@ -3,12 +3,12 @@
 
 const char * typeNames[] = {"FAT12", "FAT16", "FAT32"};
 
-FS_Instance * fs_create_instance(char * image_path) {
+FS_Instance * fs_create_instance(char * imagePath) {
 	FS_Instance * fsi = malloc(sizeof(FS_Instance));
 	if (NULL == fsi) {
 		return NULL;
 	}
-	fsi->disk = fopen(image_path, "r+");
+	fsi->disk = fopen(imagePath, "r+");
 	if (NULL == fsi->disk) {
 		fs_cleanup(fsi);
 		return NULL;
@@ -245,11 +245,11 @@ FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 	return dir;
 }
 
-void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local_path) {
+void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {
 
 }
 
-void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local_path) {
+void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {
 
 }
 

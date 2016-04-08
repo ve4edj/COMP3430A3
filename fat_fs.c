@@ -8,7 +8,7 @@ FS_Instance * fs_create_instance(char * imagePath) {
 	if (NULL == fsi) {
 		return NULL;
 	}
-	fsi->disk = fopen(imagePath, "r+");
+	fsi->disk = fopen(imagePath, "rb+");
 	if (NULL == fsi->disk) {
 		fs_cleanup(fsi);
 		return NULL;
@@ -73,7 +73,7 @@ FS_Directory fs_get_root(FS_Instance * fsi) {
 			return fsi->bootsect32->BPB_RootClus;
 			break;
 	}
-	return 0x00000000;
+	return 0x00000001;
 }
 
 void loopPrintChar(uint8_t * str, int len) { for (int i = 0; i < len; printf("%c", str[i++])); }
@@ -274,7 +274,7 @@ void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local
 		el = el->next;
 		freeFSEntryListItem(toFree);
 	}
-	FILE * localFile = fopen(localPath, "w");
+	FILE * localFile = fopen(localPath, "wb");
 	if (found && (NULL != localFile)) {
 		do {
 			size_t bytesToRead = sizeof(uint8_t) * fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;

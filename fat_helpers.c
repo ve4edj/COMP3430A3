@@ -55,16 +55,56 @@ FS_FATEntry getFATEntryForCluster(FS_Cluster cluster, FS_Instance * fsi) {
 	return entry;
 }
 
-uint8_t isFATEntryEOF(FS_FATEntry entry, FS_Instance * fsi) {
+void setFATEntryForCluster(FS_Cluster cluster, FS_FATEntry entry, FS_Instance * fsi) {
+	uint32_t sectorNum = getFATSectorNum(cluster, fsi);
+	uint32_t entOffset = getFATEntryOffset(cluster, fsi);
+	uint32_t bytesToRead = fsi->bootsect->BPB_BytsPerSec;
+	if ((fsi->type == FS_FAT12) && (entOffset == (fsi->bootsect->BPB_BytsPerSec - 1)) && !((sectorNum - fsi->bootsect->BPB_RsvdSecCnt) == (fsi->FATsz - 1))) {
+		bytesToRead *= 2;
+	}
+	uint8_t * FATSector = malloc(bytesToRead);
+	if (NULL == FATSector)
+		return;
+	fseek(fsi->disk, (sectorNum * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+	fread(FATSector, bytesToRead, 1, fsi->disk);
 	switch (fsi->type) {
 		case FS_FAT12:
-			return (entry >= 0x0FF8);
+			if (cluster % 2) {
+				(*((uint16_t *)&FATSector[entOffset])) &= 0x000F;
+				entry <<= 4;
+			} else {
+				(*((uint16_t *)&FATSector[entOffset])) &= 0xF000;
+				entry &= 0x0FFF;
+			}
+			(*((uint16_t *)&FATSector[entOffset])) |= entry;
+			break;
 		case FS_FAT16:
-			return (entry >= 0xFFF8);
+			(*((uint16_t *)&FATSector[entOffset])) = entry;
+			break;
 		case FS_FAT32:
-			return (entry >= 0x0FFFFFF8);
+			(*((uint32_t *)&FATSector[entOffset])) &= 0xF0000000;
+			(*((uint32_t *)&FATSector[entOffset])) |= entry & 0x0FFFFFFF;
+			break;
 	}
-	return 0xFF;
+	fseek(fsi->disk, (sectorNum * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+	fwrite(FATSector, bytesToRead, 1, fsi->disk);
+	free(FATSector);
+}
+
+FS_FATEntry getEOFMarker(FS_Instance * fsi) {
+	switch (fsi->type) {
+		case FS_FAT12:
+			return 0x00000FF8;
+		case FS_FAT16:
+			return 0x0000FFF8;
+		case FS_FAT32:
+			return 0x0FFFFFF8;
+	}
+	return 0xFFFFFFFF;
+}
+
+uint8_t isFATEntryEOF(FS_FATEntry entry, FS_Instance * fsi) {
+	return (entry >= getEOFMarker(fsi));
 }
 
 uint8_t isFATEntryBad(FS_FATEntry entry, FS_Instance * fsi) {

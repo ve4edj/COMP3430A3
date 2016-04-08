@@ -204,7 +204,7 @@ void print_dir(FS_Instance * fsi, FS_Directory currDir) {
 		printf(" ");
 		fatDate * cDate = &(ent->entry->DIR_WrtDate);
 		fatTime * cTime = &(ent->entry->DIR_WrtTime);
-		printf("%04d/%02d/%02d %02d:%02d:%02d", cDate->year + 1980, cDate->month, cDate->day, cTime->hour, cTime->min, (cTime->sec * 2) + (ent->entry->DIR_CrtTimeTenth / 2));
+		printf("%04d/%02d/%02d %02d:%02d:%02d", cDate->year + 1980, cDate->month, cDate->day, cTime->hour, cTime->min, (cTime->sec * 2) + (ent->entry->DIR_CrtTimeTenth / 20));
 		if (ent->filename) {
 			printf(" ( ");
 			int idx = 0;
@@ -291,15 +291,33 @@ void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local
 }
 
 void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {
-
+	struct stat stats;
+	stat(path, &stats);
+	off_t fileSz = stats.st_size;
+	// figure out how many clusters are needed and allocate them, marking the last one as EOC in the FAT
+		// roll back and error if we are out of clusters
+	// zero out the last cluster
+	// figure out how many LFN entries are needed for the filename
+	// write the filename and the directory entry to the current dir
+		// if we are out of entries in the curretn cluster, allocate a new cluster and chain it in the FAT
+			// roll back and error if we are out of clusters
+	// start freading from the source and fwriting into the dest one cluster at a time
 }
 
 FS_Directory make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
-
+	// allocate a cluster for the directory, mark it as EOC in the FAT
+		// roll back and error if we are out of clusters
+	// zero out the cluster
+	// figure out how many LFN entries are needed for the filename
+	// write the filename and the directory entry to the current dir
 }
 
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path) {
-
+	// look up the file in the directory
+	// if it's the '.' file, special case (deleting current dir)
+	// if it's the '..' file, error (cannot delete parent within child)
+	// if it's a file, mark its clusters in the FAT as free, set it's LFN and dir entries to free
+	// if it's a dir, recursively delete all nested dirs, then delete all children, then delete dir
 }
 
 void fs_cleanup(FS_Instance * fsi) {

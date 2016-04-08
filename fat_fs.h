@@ -1,7 +1,10 @@
 #ifndef FAT_FS_H
 #define FAT_FS_H
 
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <inttypes.h>
+#include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

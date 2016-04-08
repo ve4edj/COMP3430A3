@@ -298,6 +298,10 @@ uint8_t getNumberOfLongEntriesForFilename(char * filename) {
 	uint8_t validShortName = 1, isExtensionPart = 0;
 	for (int i = 0; i < strlen(filename); i++) {
 		validShortName &= isValidFilenameChar(filename[i], 0);
+		if (isExtensionPart > 3)
+			validShortName = 0;
+		if (isExtensionPart)
+			isExtensionPart++;
 		if ('.' == filename[i]) {
 			if (isExtensionPart)
 				validShortName = 0;

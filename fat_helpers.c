@@ -121,6 +121,56 @@ uint8_t isFATEntryBad(FS_FATEntry entry, FS_Instance * fsi) {
 
 uint8_t maskAndTest(uint8_t val, uint8_t mask) { return (val & mask) == mask; }
 
+uint8_t isValidFilenameChar(char c, uint8_t isLongFilename) {
+	if (0x20 > c && 0x00 != c)
+		return 0;
+	if ('A' <= c && 'Z' >= c)
+		return 1;
+	if ('0' <= c && '9' >= c)
+		return 1;
+	if (0x7F < c)
+		return 1;
+	switch (c) {
+		case ' ':
+		case '.':
+		case '$':
+		case '%':
+		case '-':
+		case '_':
+		case '@':
+		case '~':
+		case '`':
+		case '!':
+		case '(':
+		case ')':
+		case '{':
+		case '}':
+		case '^':
+		case '#':
+		case '&':
+		case '\'':
+			return 1;
+		default:
+			if (isLongFilename) {
+				if ('a' <= c && 'z' >= c)
+					return 1;
+				switch (c) {
+					case '+':
+					case ',':
+					case ';':
+					case '=':
+					case '[':
+					case ']':
+					case '\0':
+						return 1;
+					default:
+						return 0;
+				}
+			}
+			return 0;
+	}
+}
+
 uint16_t getLongNameLetterAtPos(int pos, fatLongName * ln) {
 	uint16_t letter = 0x0000;
 	if (pos < (LDIR_Name1_LENGTH / 2)) {
@@ -189,13 +239,21 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 																							// check the type and verify the checksum here
 				uint8_t startPos = getLongNameStartPos(ln);
 				for (int i = 0; i < LDIR_LettersPerEntry; i++) {
-					longName[startPos + i] = getLongNameLetterAtPos(i, ln);					// validate the characters
+					longName[startPos + i] = getLongNameLetterAtPos(i, ln);
+					if (!isValidFilenameChar(longName[startPos + i], 1)) {
+						free(longName);
+						longName = NULL;
+						break;
+					}
 				}
+				if (NULL == longName)
+					continue;
 			} else {
 				uint8_t validEntry = 1;
-				for (int j = 0; j < DIR_Name_LENGTH; j++)									// check for the other invalid characters too
-					if (0x20 > entry->DIR_Name[j])
+				for (int j = 0; j < DIR_Name_LENGTH; j++)
+					if (!isValidFilenameChar(entry->DIR_Name[j], 0)) {
 						validEntry = 0;
+					}
 				if (!validEntry)
 					continue;
 				FS_EntryList * listEntry = malloc(sizeof(FS_EntryList));
@@ -225,4 +283,17 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 	} while (specialRootDir ? (dir < (fsi->rootDirPos + fsi->rootDirSectors)) : !isFATEntryEOF(dir, fsi));
 	free(entries);
 	return listHead;
+}
+
+FS_Cluster getNextFreeCluster(FS_Instance * fsi) {
+	for (FS_Cluster i = 0; i < fsi->countOfClusters; i++) {
+		if (getFATEntryForCluster(i+2, fsi) == 0) {
+			return i+2;
+		}
+	}
+	return 0x00000001;
+}
+
+uint8_t getNumberOfLongEntriesForFilename(char * filename) {
+
 }

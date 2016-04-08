@@ -295,5 +295,23 @@ FS_Cluster getNextFreeCluster(FS_Instance * fsi) {
 }
 
 uint8_t getNumberOfLongEntriesForFilename(char * filename) {
-
+	uint8_t validShortName = 1, isExtensionPart = 0;
+	for (int i = 0; i < strlen(filename); i++) {
+		validShortName &= isValidFilenameChar(filename[i], 0);
+		if ('.' == filename[i]) {
+			if (isExtensionPart)
+				validShortName = 0;
+			else
+				isExtensionPart = 1;
+		}
+		if ((i == 8) && !isExtensionPart)
+			validShortName = 0;
+		if (i > DIR_Name_LENGTH)
+			validShortName = 0;
+		if (!validShortName)
+			break;
+	}
+	if (validShortName)
+		return 0;
+	return ((strlen(filename) - 1) / LDIR_LettersPerEntry) + 1;
 }

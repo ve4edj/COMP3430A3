@@ -15,7 +15,7 @@
 #define LDIR_Name1_LENGTH 10
 #define LDIR_Name2_LENGTH 12
 #define LDIR_Name3_LENGTH 4
-#define LDIR_LettersPerEntry (LDIR_Name1_LENGTH + LDIR_Name2_LENGTH + LDIR_Name3_LENGTH) / 2
+#define LDIR_LettersPerEntry ((LDIR_Name1_LENGTH + LDIR_Name2_LENGTH + LDIR_Name3_LENGTH) / 2)
 
 #pragma pack(push)
 #pragma pack(1)

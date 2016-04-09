@@ -18,6 +18,12 @@ typedef enum {
 	FS_FAT32 = 2
 } fs_type;
 
+typedef enum {
+	ERR_SUCCESS,
+	ERR_NOFREESPACE,
+	ERR_FILENAMEEXISTS
+} fs_result;
+
 typedef uint32_t FS_Directory;
 typedef uint32_t FS_FATEntry;
 typedef uint32_t FS_Cluster;
@@ -58,8 +64,8 @@ void print_info(FS_Instance * fsi);
 void print_dir(FS_Instance * fsi, FS_Directory currDir);
 FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
 void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
-void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
-uint8_t make_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
+fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
+fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path);
 
 void fs_cleanup(FS_Instance * fsi);

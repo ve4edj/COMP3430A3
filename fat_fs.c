@@ -167,13 +167,6 @@ char * getFilenameForEntry(fatEntry * ent) {
 	return filename;
 }
 
-void freeFSEntryListItem(FS_EntryList * toFree) {
-	free(toFree->node->filename);
-	free(toFree->node->entry);
-	free(toFree->node);
-	free(toFree);
-}
-
 void print_dir(FS_Instance * fsi, FS_Directory currDir) {
 	uint16_t dirCount = 0, fileCount = 0;
 	FS_EntryList * el = getDirListing((FS_Cluster)currDir, fsi);
@@ -290,7 +283,7 @@ void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local
 	}
 }
 
-void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {
+fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {
 	struct stat stats;
 	stat(path, &stats);
 	off_t fileSz = stats.st_size;
@@ -301,20 +294,36 @@ void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local
 	// fill out the entry
 	uint8_t result = addDirListing(currDir, path, entry, fsi);
 	free(entry);
-	// figure out what happened, if good things then keep going, otherwise return an error
-	// start freading from the source and fwriting into the dest one cluster at a time
+	if (ERR_SUCCESS == result) {
+		// start freading from the source and fwriting into the dest one cluster at a time
+	}
+	return result;
 }
 
-uint8_t make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
+fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 	FS_Cluster cluster = getNextFreeCluster(fsi);
 	if (1 == cluster)
-		return 1;
-	// zero out the cluster
+		return ERR_NOFREESPACE;
+	zeroCluster(cluster, fsi);
 	fatEntry * entry = malloc(sizeof(fatEntry));
-	// fill out the entry
-	uint8_t result = addDirListing(currDir, path, entry, fsi);
+	for (int i = 0; i < DIR_Name_LENGTH; entry->DIR_Name[i++] = '\0');
+	entry->DIR_Attr = ATTR_DIRECTORY | ATTR_ARCHIVE;
+	entry->DIR_NTRes = 0;
+	entry->DIR_CrtTimeTenth = 
+	entry->DIR_CrtTime = 
+	entry->DIR_CrtDate = 
+	entry->DIR_LstAccDate = 
+	entry->DIR_FstClusHI = cluster >> 8;
+	entry->DIR_WrtTime = 
+	entry->DIR_WrtDate = 
+	entry->DIR_FstClusLO = cluster & 0x00FF;
+	entry->DIR_FileSize = 0;
+	fs_result result = addDirListing(currDir, path, entry, fsi);
 	free(entry);
-	// figure out what happened, return stuff
+	if (ERR_SUCCESS == result) {
+		setFATEntryForCluster(cluster, getEOFMarker(fsi), fsi);
+	}
+	return result;
 }
 
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path) {

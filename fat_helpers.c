@@ -286,6 +286,13 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 	return listHead;
 }
 
+void freeFSEntryListItem(FS_EntryList * toFree) {
+	free(toFree->node->filename);
+	free(toFree->node->entry);
+	free(toFree->node);
+	free(toFree);
+}
+
 FS_Cluster getNextFreeCluster(FS_Instance * fsi) {
 	for (FS_Cluster i = 0; i < fsi->countOfClusters; i++) {
 		if (getFATEntryForCluster(i+2, fsi) == 0) {
@@ -321,17 +328,43 @@ uint8_t getNumberOfLongEntriesForFilename(char * filename) {
 	return ((strlen(filename) - 1) / LDIR_LettersPerEntry) + 1;
 }
 
-uint8_t fillShortNameFromLongName(FS_Entry * entry, FS_Instance * fsi) {
-	// get directory listing
+fs_result fillShortNameFromLongName(FS_Cluster dir, FS_Entry * entry, FS_Instance * fsi) {
+	FS_EntryList * el = getDirListing((FS_Cluster)dir, fsi);
+	uint8_t found = 0;
 	// create the short name
-	// loop through the directory looking for the short name or long name
-	// if the short name is found but the long name is different, do the numeric tail thing
-	// if the short name is found and either a) the long names are identical or b) neither have a long name, return an error
+	while (NULL != el) {
+		// loop through the directory looking for the short name or long name
+		// if the short name is found but the long name is different, do the numeric tail thing and keep looking
+		// if the short name is found and either a) the long names are identical or b) neither have a long name, set found and break
+		FS_EntryList * toFree = el;
+		el = el->next;
+		freeFSEntryListItem(toFree);
+	}
+	if (found) {
+		while (NULL != el) {
+			FS_EntryList * toFree = el;
+			el = el->next;
+			freeFSEntryListItem(toFree);
+		}
+		return ERR_FILENAMEEXISTS;
+	}
+	return ERR_SUCCESS;
 }
 
-uint8_t addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_Instance * fsi) {
+fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_Instance * fsi) {
 	uint8_t LFNentries = getNumberOfLongEntriesForFilename(filename);
+	fs_result result = fillShortNameFromLongName(dir, entry, fsi);
+	if (ERR_SUCCESS != result)
+		return result;
 	// write the filename and the directory entry to the current dir
 		// if we are out of entries in the curretn cluster, allocate a new cluster and chain it in the FAT
 		// roll back and error if we are out of clusters
+	return ERR_SUCCESS;
+}
+
+void zeroCluster(FS_Cluster cluster, FS_Instance * fsi) {
+	fseek(fsi->disk, (getFirstSectorOfCluster(cluster, fsi) * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+	for (int i = 0; i < (fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec); i++) {
+		// zero that byte of the dsk
+	}
 }

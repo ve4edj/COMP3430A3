@@ -23,7 +23,10 @@ typedef enum {
 typedef enum {
 	ERR_SUCCESS,
 	ERR_NOFREESPACE,
-	ERR_FILENAMEEXISTS
+	ERR_FILENAMEEXISTS,
+	ERR_FILENOTFOUND,
+	ERR_FOPENFAILEDREAD,
+	ERR_FOPENFAILEDWRITE
 } fs_result;
 
 typedef uint32_t FS_Directory;
@@ -65,7 +68,7 @@ FS_Directory fs_get_root(FS_Instance * fsi);
 void print_info(FS_Instance * fsi);
 void print_dir(FS_Instance * fsi, FS_Directory currDir);
 FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
-void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
+fs_result get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
 fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
 fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path);

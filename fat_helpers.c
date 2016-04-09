@@ -357,7 +357,7 @@ fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_In
 	if (ERR_SUCCESS != result)
 		return result;
 	// write the filename and the directory entry to the current dir
-		// if we are out of entries in the curretn cluster, allocate a new cluster and chain it in the FAT
+		// if we are out of entries in the current cluster, allocate a new cluster and chain it in the FAT
 		// roll back and error if we are out of clusters
 	return ERR_SUCCESS;
 }

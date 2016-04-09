@@ -19,15 +19,24 @@
 #define CMD_MD "MD"
 #define CMD_DEL "DEL"
 
-void printError(fs_result result) {
+void printError(fs_result result, char * arg) {
 	switch (result) {
 		case ERR_SUCCESS:
 			break;
 		case ERR_NOFREESPACE:
-			printf("Couldn't create directory, no more space on disk\n");
+			printf("Error: Couldn't create file/directory %s, no more space on disk\n", arg);
 			break;
 		case ERR_FILENAMEEXISTS:
-			printf("Couldn't create directory, duplicate filename\n");
+			printf("Error: Couldn't create file/directory %s, duplicate filename\n", arg);
+			break;
+		case ERR_FILENOTFOUND:
+			printf("Error: File %s not found on disk\n", arg);
+			break;
+		case ERR_FOPENFAILEDREAD:
+			printf("Error: Couldn't open local file for reading\n");
+			break;
+		case ERR_FOPENFAILEDWRITE:
+			printf("Error: Couldn't open local file for writing\n");
 			break;
 	}
 }
@@ -81,17 +90,18 @@ int main(int argc, char *argv[]) {
 				}
 				else if (strncmp(buffer, CMD_MD, strlen(CMD_MD)) == 0) {
 					fs_result result = make_dir(fat_fs, current_dir, arg1+1);
-					printError(result);
+					printError(result, arg1+1);
 				}
 				else if (strncmp(buffer, CMD_DEL, strlen(CMD_DEL)) == 0)
 					current_dir = delete_file(fat_fs, current_dir, arg1+1);
 				else if (NULL != arg2) {
 					*arg2 = '\0';
 					if (strncmp(buffer, CMD_GET, strlen(CMD_GET)) == 0) {
-						get_file(fat_fs, current_dir, arg1+1, arg2+1);
+						fs_result result = get_file(fat_fs, current_dir, arg1+1, arg2+1);
+						printError(result, arg1+1);
 					} else if (strncmp(buffer, CMD_PUT, strlen(CMD_PUT)) == 0) {
 						fs_result result = put_file(fat_fs, current_dir, arg1+1, arg2+1);
-						printError(result);
+						printError(result, arg1+1);
 					} else {
 						valid_cmd = 0;
 					}

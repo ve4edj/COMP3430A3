@@ -314,7 +314,6 @@ void fillEntryForNewItem(fatEntry * entry, FS_Cluster cluster, uint8_t attrs, ui
 	entry->DIR_FileSize = size;
 	free(currDate);
 	free(currTime);
-	free(now);
 }
 
 fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {

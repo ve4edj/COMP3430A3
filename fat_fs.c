@@ -305,20 +305,34 @@ fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 	if (1 == cluster)
 		return ERR_NOFREESPACE;
 	zeroCluster(cluster, fsi);
+	struct timeval tv;
+    gettimeofday(&tv, NULL);
+	struct tm * now = localtime(&(tv.tv_sec));
+	fatDate * currDate = malloc(sizeof(fatDate));
+	fatTime * currTime = malloc(sizeof(fatTime));
+	currDate->year = now->tm_year - 80;
+	currDate->month = now->tm_mon;
+	currDate->day = now->tm_mday;
+	currTime->hour = now->tm_hour;
+	currTime->min = now->tm_min;
+	currTime->sec = now->tm_sec / 2;
 	fatEntry * entry = malloc(sizeof(fatEntry));
 	for (int i = 0; i < DIR_Name_LENGTH; entry->DIR_Name[i++] = '\0');
 	entry->DIR_Attr = ATTR_DIRECTORY | ATTR_ARCHIVE;
 	entry->DIR_NTRes = 0;
-	entry->DIR_CrtTimeTenth = 
-	entry->DIR_CrtTime = 
-	entry->DIR_CrtDate = 
-	entry->DIR_LstAccDate = 
+	entry->DIR_CrtTimeTenth = ((now->tm_sec % 2) * 100) + (tv.tv_usec / 1000);
+	entry->DIR_CrtTime = *currTime;
+	entry->DIR_CrtDate = *currDate;
+	entry->DIR_LstAccDate = *currDate;
 	entry->DIR_FstClusHI = cluster >> 8;
-	entry->DIR_WrtTime = 
-	entry->DIR_WrtDate = 
+	entry->DIR_WrtTime = *currTime;
+	entry->DIR_WrtDate = *currDate;
 	entry->DIR_FstClusLO = cluster & 0x00FF;
 	entry->DIR_FileSize = 0;
 	fs_result result = addDirListing(currDir, path, entry, fsi);
+	free(currDate);
+	free(currTime);
+	free(now);
 	free(entry);
 	if (ERR_SUCCESS == result) {
 		setFATEntryForCluster(cluster, getEOFMarker(fsi), fsi);

@@ -3,11 +3,13 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <inttypes.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "fat.h"
 
 extern const char * typeNames[];

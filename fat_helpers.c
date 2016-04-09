@@ -328,7 +328,7 @@ uint8_t getNumberOfLongEntriesForFilename(char * filename) {
 	return ((strlen(filename) - 1) / LDIR_LettersPerEntry) + 1;
 }
 
-fs_result fillShortNameFromLongName(FS_Cluster dir, FS_Entry * entry, FS_Instance * fsi) {
+fs_result fillShortNameFromLongName(FS_Cluster dir, fatEntry * entry, FS_Instance * fsi) {
 	FS_EntryList * el = getDirListing((FS_Cluster)dir, fsi);
 	uint8_t found = 0;
 	// create the short name

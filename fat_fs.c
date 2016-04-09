@@ -110,7 +110,7 @@ void print_info(FS_Instance * fsi) {
 	printf("Media Type: 0x%2X (%sremovable)\n", bs->BPB_Media, (bs->BPB_Media == 0xF8) ? "non-" : "");
 	long double scaledSz = fsi->totalSize;
 	int theUnit = scaleFileSize(&scaledSz);
-	printf("Size: %lu bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[theUnit]);
+	printf("Size: %llu bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[theUnit]);
 	printf("\n");
 	printf("Disk geometry:\n--------------\n");
 	printf("Bytes Per Sector: %u\n", bs->BPB_BytsPerSec);
@@ -130,8 +130,8 @@ void print_info(FS_Instance * fsi) {
 	printf("FAT Size (sectors): %u\n", fsi->FATsz);
 	printf("Number of FATs: %u\n", fsi->bootsect->BPB_NumFATs);
 	printf("Reserved sectors: %u\n", fsi->bootsect->BPB_RsvdSecCnt);
-	printf("Root directory sectors: %lu\n", fsi->rootDirSectors);
-	printf("Data clusters: %lu\n", fsi->countOfClusters);
+	printf("Root directory sectors: %llu\n", fsi->rootDirSectors);
+	printf("Data clusters: %llu\n", fsi->countOfClusters);
 	uint32_t freeClusters = 0;
 	for (int i = 0; i < fsi->countOfClusters; i++) {
 		if (getFATEntryForCluster(i+2, fsi) == 0) {

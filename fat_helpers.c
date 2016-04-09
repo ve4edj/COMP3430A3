@@ -161,7 +161,6 @@ uint8_t isValidFilenameChar(char c, uint8_t isLongFilename) {
 					case '=':
 					case '[':
 					case ']':
-					case '\0':
 						return 1;
 					default:
 						return 0;
@@ -240,7 +239,9 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 				uint8_t startPos = getLongNameStartPos(ln);
 				for (int i = 0; i < LDIR_LettersPerEntry; i++) {
 					longName[startPos + i] = getLongNameLetterAtPos(i, ln);
-					if (!isValidFilenameChar(longName[startPos + i], 1)) {
+					if (0x0000 == longName[startPos + i])
+						break;
+					if (!isValidFilenameChar(longName[startPos + i] & 0x00FF, 1)) {
 						free(longName);
 						longName = NULL;
 						break;

@@ -178,7 +178,7 @@ void print_dir(FS_Instance * fsi, FS_Directory currDir) {
 		printf("%-12s", filename);
 		free(filename);
 		if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) || maskAndTest(ent->entry->DIR_Attr, ATTR_VOLUME_ID)) {
-			if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) && (('.' != ent->entry->DIR_Name[0]) || (('.' == ent->entry->DIR_Name[0]) && ('.' != ent->entry->DIR_Name[1]) && (' ' != ent->entry->DIR_Name[1]))))
+			if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY) && ('.' != ent->entry->DIR_Name[0]))
 				dirCount++;
 			printf("%25s", "");
 		} else {
@@ -270,17 +270,19 @@ fs_result get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 	if (found) {
 		FILE * localFile = fopen(localPath, "wb");
 		if (NULL != localFile) {
+			uint32_t bytesPerCluster = fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
+			uint8_t * cluster = malloc(sizeof(uint8_t) * bytesPerCluster);
 			do {
-				size_t bytesToRead = sizeof(uint8_t) * fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
+				size_t bytesToRead = sizeof(uint8_t) * bytesPerCluster;
 				if (bytesToRead > fileSz)
 					bytesToRead = fileSz;
 				fileSz -= bytesToRead;
-				uint8_t * cluster = malloc(sizeof(uint8_t) * bytesToRead);
 				fseek(fsi->disk, (getFirstSectorOfCluster(file, fsi) * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
 				fread(cluster, sizeof(uint8_t), bytesToRead, fsi->disk);
 				fwrite(cluster, sizeof(uint8_t), bytesToRead, localFile);
 				file = getFATEntryForCluster(file, fsi);
 			} while (!isFATEntryEOF(file, fsi));
+			free(cluster);
 			return ERR_SUCCESS;
 		}
 		return ERR_FOPENFAILEDWRITE;
@@ -320,15 +322,34 @@ fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 	struct stat stats;
 	stat(path, &stats);
 	off_t fileSz = stats.st_size;
+	uint32_t bytesPerCluster = fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
+	uint16_t numClustersForFile = (fileSz / bytesPerCluster) + 1;
 	// figure out how many clusters are needed and allocate them, marking the last one as EOC in the FAT
 		// roll back and error if we are out of clusters
 	// zero out the last cluster
+	FS_Cluster file = 0;
 	fatEntry * entry = malloc(sizeof(fatEntry));
-	//fillEntryForNewItem(entry, cluster, ATTR_ARCHIVE, (uint32_t)fileSz);
+	fillEntryForNewItem(entry, file, ATTR_ARCHIVE, (uint32_t)fileSz);
 	uint8_t result = addDirListing(currDir, path, entry, fsi);
 	free(entry);
 	if (ERR_SUCCESS == result) {
-		// start freading from the source and fwriting into the dest one cluster at a time
+		FILE * localFile = fopen(localPath, "rb");
+		if (NULL != localFile) {
+			uint8_t * cluster = malloc(sizeof(uint8_t) * bytesPerCluster);
+			do {
+				size_t bytesToRead = sizeof(uint8_t) * bytesPerCluster;
+				if (bytesToRead > fileSz)
+					bytesToRead = fileSz;
+				fileSz -= bytesToRead;
+				fseek(fsi->disk, (getFirstSectorOfCluster(file, fsi) * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+				fread(cluster, sizeof(uint8_t), bytesToRead, localFile);
+				fwrite(cluster, sizeof(uint8_t), bytesToRead, fsi->disk);
+				file = getFATEntryForCluster(file, fsi);
+			} while (!isFATEntryEOF(file, fsi));
+			free(cluster);
+			return ERR_SUCCESS;
+		}
+		return ERR_FOPENFAILEDREAD;
 	}
 	return result;
 }

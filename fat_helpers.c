@@ -122,7 +122,7 @@ uint8_t isFATEntryBad(FS_FATEntry entry, FS_Instance * fsi) {
 uint8_t maskAndTest(uint8_t val, uint8_t mask) { return (val & mask) == mask; }
 
 uint8_t isValidFilenameChar(char c, uint8_t isLongFilename) {
-	if (0x20 > c && 0x00 != c)
+	if ((0x20 > c) && (0x00 != c))
 		return 0;
 	if ('A' <= c && 'Z' >= c)
 		return 1;

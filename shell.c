@@ -24,7 +24,7 @@ void printError(fs_result result, char * arg) {
 		case ERR_SUCCESS:
 			break;
 		case ERR_NOFREESPACE:
-			printf("Error: Couldn't create file/directory %s, no more space on disk\n", arg);
+			printf("Error: Couldn't create file/directory %s, insufficient space on disk\n", arg);
 			break;
 		case ERR_FILENAMEEXISTS:
 			printf("Error: Couldn't create file/directory %s, duplicate filename\n", arg);

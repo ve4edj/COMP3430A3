@@ -363,8 +363,9 @@ fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_In
 }
 
 void zeroCluster(FS_Cluster cluster, FS_Instance * fsi) {
+	uint8_t zero = 0;
 	fseek(fsi->disk, (getFirstSectorOfCluster(cluster, fsi) * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
 	for (int i = 0; i < (fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec); i++) {
-		// zero that byte of the dsk
+		fwrite(&zero, sizeof(uint8_t), 1, fsi->disk);
 	}
 }

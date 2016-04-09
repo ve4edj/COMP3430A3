@@ -324,10 +324,30 @@ fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 	off_t fileSz = stats.st_size;
 	uint32_t bytesPerCluster = fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
 	uint16_t numClustersForFile = (fileSz / bytesPerCluster) + 1;
-	// figure out how many clusters are needed and allocate them, marking the last one as EOC in the FAT
-		// roll back and error if we are out of clusters
-	// zero out the last cluster
-	FS_Cluster file = 0;
+	FS_Cluster file = getNextFreeCluster(fsi);
+	FS_Cluster curr = file, next = file;
+	while (--numClustersForFile > 0) {
+		next = getNextFreeCluster(fsi);
+		if (1 == next) {
+			if (1 != curr)
+				setFATEntryForCluster(curr, getEOFMarker(fsi), fsi);
+			break;
+		}
+		setFATEntryForCluster(curr, next, fsi);
+		curr = next;
+	}
+	if (1 == next) {
+		if (1 != file) {
+			do {
+				curr = getFATEntryForCluster(file, fsi);
+				setFATEntryForCluster(file, 0, fsi);
+				file = curr;
+			} while (!isFATEntryEOF(file, fsi));
+		}
+		return ERR_NOFREESPACE;
+	}
+	setFATEntryForCluster(next, getEOFMarker(fsi), fsi);
+	zeroCluster(next, fsi);
 	fatEntry * entry = malloc(sizeof(fatEntry));
 	fillEntryForNewItem(entry, file, ATTR_ARCHIVE, (uint32_t)fileSz);
 	uint8_t result = addDirListing(currDir, path, entry, fsi);

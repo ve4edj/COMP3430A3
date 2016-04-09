@@ -319,3 +319,18 @@ uint8_t getNumberOfLongEntriesForFilename(char * filename) {
 		return 0;
 	return ((strlen(filename) - 1) / LDIR_LettersPerEntry) + 1;
 }
+
+uint8_t fillShortNameFromLongName(FS_Entry * entry, FS_Instance * fsi) {
+	// get directory listing
+	// create the short name
+	// loop through the directory looking for the short name or long name
+	// if the short name is found but the long name is different, do the numeric tail thing
+	// if the short name is found and either a) the long names are identical or b) neither have a long name, return an error
+}
+
+uint8_t addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_Instance * fsi) {
+	uint8_t LFNentries = getNumberOfLongEntriesForFilename(filename);
+	// write the filename and the directory entry to the current dir
+		// if we are out of entries in the curretn cluster, allocate a new cluster and chain it in the FAT
+		// roll back and error if we are out of clusters
+}

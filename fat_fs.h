@@ -59,7 +59,7 @@ void print_dir(FS_Instance * fsi, FS_Directory currDir);
 FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
 void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
 void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
-FS_Directory make_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
+uint8_t make_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path);
 
 void fs_cleanup(FS_Instance * fsi);

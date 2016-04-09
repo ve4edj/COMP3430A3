@@ -66,8 +66,16 @@ int main(int argc, char *argv[]) {
 					else
 						current_dir = temp_dir;
 				}
-				else if (strncmp(buffer, CMD_MD, strlen(CMD_MD)) == 0)
-					current_dir = make_dir(fat_fs, current_dir, arg1+1);
+				else if (strncmp(buffer, CMD_MD, strlen(CMD_MD)) == 0) {
+					uint8_t result = make_dir(fat_fs, current_dir, arg1+1);
+					switch (result) {
+						case 0:
+							break;
+						case 1:
+							printf("Couldn't create direectory, no more space on disk\n");
+							break;
+					}
+				}
 				else if (strncmp(buffer, CMD_DEL, strlen(CMD_DEL)) == 0)
 					current_dir = delete_file(fat_fs, current_dir, arg1+1);
 				else if (NULL != arg2) {

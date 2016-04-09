@@ -110,7 +110,7 @@ void print_info(FS_Instance * fsi) {
 	printf("Media Type: 0x%2X (%sremovable)\n", bs->BPB_Media, (bs->BPB_Media == 0xF8) ? "non-" : "");
 	long double scaledSz = fsi->totalSize;
 	int theUnit = scaleFileSize(&scaledSz);
-	printf("Size: %llu bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[theUnit]);
+	printf("Size: %lu bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[theUnit]);
 	printf("\n");
 	printf("Disk geometry:\n--------------\n");
 	printf("Bytes Per Sector: %u\n", bs->BPB_BytsPerSec);
@@ -122,16 +122,16 @@ void print_info(FS_Instance * fsi) {
 	printf("File system info:\n-----------------\n");
 	printf("Volume ID: ");
 	if (fsi->type == FS_FAT32)
-		printf("%lu", fsi->bootsect32->BS_VolID);
+		printf("%u", fsi->bootsect32->BS_VolID);
 	else
-		printf("%lu", fsi->bootsect16->BS_VolID);
+		printf("%u", fsi->bootsect16->BS_VolID);
 	printf("\n");
 	printf("File System Type (computed): %s\n", typeNames[fsi->type]);
 	printf("FAT Size (sectors): %u\n", fsi->FATsz);
 	printf("Number of FATs: %u\n", fsi->bootsect->BPB_NumFATs);
 	printf("Reserved sectors: %u\n", fsi->bootsect->BPB_RsvdSecCnt);
-	printf("Root directory sectors: %llu\n", fsi->rootDirSectors);
-	printf("Data clusters: %llu\n", fsi->countOfClusters);
+	printf("Root directory sectors: %lu\n", fsi->rootDirSectors);
+	printf("Data clusters: %lu\n", fsi->countOfClusters);
 	uint32_t freeClusters = 0;
 	for (int i = 0; i < fsi->countOfClusters; i++) {
 		if (getFATEntryForCluster(i+2, fsi) == 0) {
@@ -297,19 +297,24 @@ void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * local
 	// figure out how many clusters are needed and allocate them, marking the last one as EOC in the FAT
 		// roll back and error if we are out of clusters
 	// zero out the last cluster
-	// figure out how many LFN entries are needed for the filename
-	// write the filename and the directory entry to the current dir
-		// if we are out of entries in the curretn cluster, allocate a new cluster and chain it in the FAT
-			// roll back and error if we are out of clusters
+	fatEntry * entry = malloc(sizeof(fatEntry));
+	// fill out the entry
+	uint8_t result = addDirListing(currDir, path, entry, fsi);
+	free(entry);
+	// figure out what happened, if good things then keep going, otherwise return an error
 	// start freading from the source and fwriting into the dest one cluster at a time
 }
 
-FS_Directory make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
-	// allocate a cluster for the directory, mark it as EOC in the FAT
-		// roll back and error if we are out of clusters
+uint8_t make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
+	FS_Cluster cluster = getNextFreeCluster(fsi);
+	if (1 == cluster)
+		return 1;
 	// zero out the cluster
-	// figure out how many LFN entries are needed for the filename
-	// write the filename and the directory entry to the current dir
+	fatEntry * entry = malloc(sizeof(fatEntry));
+	// fill out the entry
+	uint8_t result = addDirListing(currDir, path, entry, fsi);
+	free(entry);
+	// figure out what happened, return stuff
 }
 
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path) {

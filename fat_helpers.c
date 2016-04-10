@@ -435,7 +435,7 @@ void getLongNameSection(fatEntry * entry, fatLongName * ln, uint8_t section, uin
 	ln->LDIR_Type = 0;
 	ln->LDIR_Chksum = getLongNameChecksum(entry);
 	ln->LDIR_Zero = 0;
-	uint8_t offset = section * LDIR_LettersPerEntry;
+	uint8_t offset = ((entries - section) - 1) * LDIR_LettersPerEntry;
 	uint8_t totalLen = strlen(filename);
 	for (uint8_t i = 0; i < LDIR_Name1_LENGTH; i++) {
 		if ((offset + i) < totalLen)

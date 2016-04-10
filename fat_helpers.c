@@ -410,11 +410,39 @@ fs_result fillShortNameFromLongName(FS_Cluster dir, fatEntry * entry, char * fil
 	FS_EntryList * curr = el;
 	uint8_t found = 0;
 	while (NULL != curr) {
-		// loop through the directory looking for the short name or long name
-		// if the long name is found, set found and break
-		// if the short name is found and neither have a long name, set found and break
-		// if the short name is found but the long name is different or the found entry doesn't have a long name, update the numeric tail and restart looking
-		curr = curr->next;
+		FS_Entry * currEntry = curr->node;
+		if (NULL != currEntry->filename) {
+			found = 1;
+			uint8_t idx = 0;
+			while ((0x0000 != currEntry->filename[idx]) && (idx < strlen(filename))) {
+				if ((currEntry->filename[idx] & 0x00FF) != filename[idx]) {
+					found = 0;
+					break;
+				}
+				idx++;
+			}
+			if ((currEntry->filename[idx] & 0x00FF) != filename[idx])
+				found = 0;
+			if (found)
+				break;
+		}
+		found = 1;
+		for (uint8_t i = 0; i < DIR_Name_LENGTH; i++) {
+			if (currEntry->entry->DIR_Name[i] != entry->DIR_Name[i]) {
+				found = 0;
+				break;
+			}
+		}
+		if (found) {
+			if (wasLossy) {
+				setNumericTail(entry, ++currTail);
+				curr = el;
+			} else {
+				break;
+			}
+		} else {
+			curr = curr->next;
+		}
 	}
 	while (NULL != el) {
 		FS_EntryList * toFree = el;

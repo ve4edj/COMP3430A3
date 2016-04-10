@@ -78,6 +78,9 @@ int main(int argc, char *argv[]) {
 	printf("| CD:   change directory (multiple levels   |\n");
 	printf("|          supported, e.g. '../..')         |\n");
 	printf("| GET:  retrieve a file from the image      |\n");
+	printf("| PUT:  insert a file into the image        |\n");
+	printf("| MD:   create a new directory              |\n");
+	printf("| DEL:  delete a file or directory          |\n");
 	printf("+-------------------------------------------+\n");
 	printf("|                 Features:                 |\n");
 	printf("+-------------------------------------------+\n");
@@ -86,7 +89,7 @@ int main(int argc, char *argv[]) {
 	printf("+-------------------------------------------+\n");
 	printf("|                   Note:                   |\n");
 	printf("+-------------------------------------------+\n");
-	printf("|  The GET and CD commands require that the |\n");
+	printf("|  GET, CD & DEL commands require that the  |\n");
 	printf("|  short name of the item be passed as the  |\n");
 	printf("|  argument and are case-sensitive.         |\n");
 	printf("+-------------------------------------------+\n");

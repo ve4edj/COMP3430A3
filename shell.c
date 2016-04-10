@@ -38,6 +38,15 @@ void printError(fs_result result, char * arg) {
 		case ERR_FOPENFAILEDWRITE:
 			printf("Error: Couldn't open local file for writing\n");
 			break;
+		case ERR_DELETESPECIALDIR:
+			printf("Error: Cannot delete '.' or '..' entries in a directory\n");
+			break;
+		case ERR_MALLOCFAILED:
+			printf("Error: Failed to allocate sufficient scratchpad RAM\n");
+			break;
+		case ERR_ROOTDIRFULL:
+			printf("Error: Insufficient free entries available in the root directory\n");
+			break;
 	}
 }
 

@@ -391,9 +391,7 @@ fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path) {
 	// look up the file in the directory
-	// if it's the '.' file, special case (deleting current dir)
-	// if it's the '..' file, error (cannot delete parent within child)
-	// if it's a file, mark its clusters in the FAT as free, set it's LFN and dir entries to free
+	// if it's a file, mark its clusters in the FAT as free, set its' LFN and dir entries to free
 	// if it's a dir, recursively delete all nested dirs, then delete all children, then delete dir
 }
 

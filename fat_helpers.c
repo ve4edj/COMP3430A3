@@ -122,7 +122,7 @@ uint8_t isFATEntryBad(FS_FATEntry entry, FS_Instance * fsi) {
 uint8_t maskAndTest(uint8_t val, uint8_t mask) { return (val & mask) == mask; }
 
 uint8_t isValidFilenameChar(char c, uint8_t isLongFilename) {
-	if (0x20 > c && 0x00 != c)
+	if ((0x20 > c) && (0x00 != c))
 		return 0;
 	if ('A' <= c && 'Z' >= c)
 		return 1;
@@ -199,6 +199,14 @@ uint8_t getLongNameStartPos(fatLongName * ln) {
 	return ((ln->LDIR_Ord & ~(LAST_LONG_ENTRY)) - 1) * LDIR_LettersPerEntry;
 }
 
+uint8_t getLongNameChecksum(fatEntry * entry) {
+	uint8_t checksum = 0;
+	for (int i = 0; i < DIR_Name_LENGTH; i++) {
+		checksum = (((checksum & 1) ? 0x80 : 0) + (checksum >> 1)) + entry->DIR_Name[i];
+	}
+	return checksum;
+}
+
 uint8_t isSpecialRootDir(FS_Cluster dir, FS_Instance * fsi) {
 	return ((fsi->type == FS_FAT12) || (fsi->type == FS_FAT16)) && (dir == 0x00000000);
 }
@@ -235,7 +243,11 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 					longName = calloc(getLongNameLength(ln) + 1, sizeof(uint16_t));
 				if (NULL == longName)
 					return NULL;															// should do some cleanup here
-																							// check the type and verify the checksum here
+				if (0 != ln->LDIR_Type) {
+					free(longName);
+					longName = NULL;
+					break;
+				}
 				uint8_t startPos = getLongNameStartPos(ln);
 				for (int i = 0; i < LDIR_LettersPerEntry; i++) {
 					longName[startPos + i] = getLongNameLetterAtPos(i, ln);
@@ -286,6 +298,13 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 	return listHead;
 }
 
+void freeFSEntryListItem(FS_EntryList * toFree) {
+	free(toFree->node->filename);
+	free(toFree->node->entry);
+	free(toFree->node);
+	free(toFree);
+}
+
 FS_Cluster getNextFreeCluster(FS_Instance * fsi) {
 	for (FS_Cluster i = 0; i < fsi->countOfClusters; i++) {
 		if (getFATEntryForCluster(i+2, fsi) == 0) {
@@ -321,17 +340,134 @@ uint8_t getNumberOfLongEntriesForFilename(char * filename) {
 	return ((strlen(filename) - 1) / LDIR_LettersPerEntry) + 1;
 }
 
-uint8_t fillShortNameFromLongName(FS_Entry * entry, FS_Instance * fsi) {
-	// get directory listing
+fs_result fillShortNameFromLongName(FS_Cluster dir, fatEntry * entry, FS_Instance * fsi) {
+	FS_EntryList * el = getDirListing((FS_Cluster)dir, fsi);
+	uint8_t found = 0;
 	// create the short name
-	// loop through the directory looking for the short name or long name
-	// if the short name is found but the long name is different, do the numeric tail thing
-	// if the short name is found and either a) the long names are identical or b) neither have a long name, return an error
+	while (NULL != el) {
+		// loop through the directory looking for the short name or long name
+		// if the short name is found but the long name is different, do the numeric tail thing and keep looking
+		// if the short name is found and either a) the long names are identical or b) neither have a long name, set found and break
+		FS_EntryList * toFree = el;
+		el = el->next;
+		freeFSEntryListItem(toFree);
+	}
+	if (found) {
+		while (NULL != el) {
+			FS_EntryList * toFree = el;
+			el = el->next;
+			freeFSEntryListItem(toFree);
+		}
+		return ERR_FILENAMEEXISTS;
+	}
+	return ERR_SUCCESS;
 }
 
-uint8_t addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_Instance * fsi) {
+void getLongNameSection(fatEntry * entry, fatLongName * ln, uint8_t section, uint8_t entries, char * filename) {
+	ln->LDIR_Ord = entries - section;
+	if (0 == section)
+		ln->LDIR_Ord |= LAST_LONG_ENTRY;
+	ln->LDIR_Attr = ATTR_LONG_NAME;
+	ln->LDIR_Type = 0;
+	ln->LDIR_Chksum = getLongNameChecksum(entry);
+	ln->LDIR_Zero = 0;
+	//ln->LDIR_Name1[LDIR_Name1_LENGTH] = ;
+	//ln->LDIR_Name2[LDIR_Name2_LENGTH] = ;
+	//ln->LDIR_Name3[LDIR_Name3_LENGTH] = ;
+}
+
+fs_result getNContiguousDirEntries(FH_DirEntryPos * dirEntry, FS_Cluster dir, uint8_t numEntries, FS_Instance * fsi) {
+	uint8_t found = 0;
+	uint8_t freeEntriesFound = 0;
+	FS_Cluster lastDir;
+	uint8_t specialRootDir = isSpecialRootDir(dir, fsi);
+	uint32_t bytesPerCluster = ((!specialRootDir) ? fsi->bootsect->BPB_SecPerClus : 1) * fsi->bootsect->BPB_BytsPerSec;
+	uint32_t entriesPerCluster = bytesPerCluster / sizeof(fatEntry);
+	fatEntry * entries = malloc(entriesPerCluster * sizeof(fatEntry));
+	if (NULL == entries)
+		return ERR_MALLOCFAILED;
+	if (specialRootDir)
+		dir = fsi->rootDirPos;
+	do {
+		freeEntriesFound = 0;
+		uint64_t seekTo = dir;
+		if (!specialRootDir)
+			seekTo = getFirstSectorOfCluster(dir, fsi);
+		fseek(fsi->disk, (seekTo * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+		fread(entries, sizeof(fatEntry), entriesPerCluster, fsi->disk);
+		for (int i = 0; i < entriesPerCluster; i++) {
+			fatEntry * entry = &(entries[i]);
+			if (0 == freeEntriesFound) {
+				dirEntry->cluster = dir;
+				dirEntry->index = i;
+			}
+			if (0x00 == entry->DIR_Name[0])
+				freeEntriesFound += entriesPerCluster - i;
+			else if (0xE5 == entry->DIR_Name[0])
+				freeEntriesFound++;
+			else
+				freeEntriesFound = 0;
+			if (freeEntriesFound >= numEntries) {
+				found = 1;
+				break;
+			}
+		}
+		if (found)
+			break;
+		lastDir = dir;
+		if (!specialRootDir)
+			dir = getFATEntryForCluster(dir, fsi);
+		else
+			dir++;
+	} while (specialRootDir ? (dir < (fsi->rootDirPos + fsi->rootDirSectors)) : !isFATEntryEOF(dir, fsi));
+	free(entries);
+	if (found)
+		return ERR_SUCCESS;
+	if (isSpecialRootDir)
+		return ERR_ROOTDIRFULL;
+	FS_Cluster nextCluster = getNextFreeCluster(fsi);
+	if (1 == nextCluster)
+		return ERR_NOFREESPACE;
+	setFATEntryForCluster(lastDir, nextCluster, fsi);
+	setFATEntryForCluster(nextCluster, getEOFMarker(fsi), fsi);
+	dirEntry->cluster = nextCluster;
+	dirEntry->index = 0;
+	return ERR_SUCCESS;
+}
+
+fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_Instance * fsi) {
 	uint8_t LFNentries = getNumberOfLongEntriesForFilename(filename);
-	// write the filename and the directory entry to the current dir
-		// if we are out of entries in the curretn cluster, allocate a new cluster and chain it in the FAT
-		// roll back and error if we are out of clusters
+	fs_result result = fillShortNameFromLongName(dir, entry, fsi);
+	if (ERR_SUCCESS != result)
+		return result;
+	FH_DirEntryPos * entryPos = malloc(sizeof(FH_DirEntryPos));
+	if (NULL == entryPos)
+		return ERR_MALLOCFAILED;
+	result = getNContiguousDirEntries(entryPos, dir, LFNentries + 1, fsi);
+	if (ERR_SUCCESS != result) {
+		free(entryPos);
+		return result;
+	}
+	uint64_t seekTo = entryPos->cluster;
+	if (!isSpecialRootDir(dir, fsi))
+		seekTo = getFirstSectorOfCluster(entryPos->cluster, fsi);
+	fseek(fsi->disk, (seekTo * fsi->bootsect->BPB_BytsPerSec) + (entryPos->index * sizeof(fatEntry)), SEEK_SET);
+	free(entryPos);
+	fatLongName * ln = malloc(sizeof(fatLongName));
+	if (NULL == ln)
+		return ERR_MALLOCFAILED;
+	for (uint8_t i = 0; i < LFNentries; i++) {
+		getLongNameSection(entry, ln, i, LFNentries, filename);
+		fwrite(ln, sizeof(fatLongName), 1, fsi->disk);
+	}
+	fwrite(entry, sizeof(fatEntry), 1, fsi->disk);
+	return ERR_SUCCESS;
+}
+
+void zeroCluster(FS_Cluster cluster, FS_Instance * fsi) {
+	uint8_t zero = 0;
+	fseek(fsi->disk, (getFirstSectorOfCluster(cluster, fsi) * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+	for (int i = 0; i < (fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec); i++) {
+		fwrite(&zero, sizeof(uint8_t), 1, fsi->disk);
+	}
 }

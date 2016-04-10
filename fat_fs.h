@@ -3,11 +3,13 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <inttypes.h>
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "fat.h"
 
 extern const char * typeNames[];
@@ -17,6 +19,18 @@ typedef enum {
 	FS_FAT16 = 1,
 	FS_FAT32 = 2
 } fs_type;
+
+typedef enum {
+	ERR_SUCCESS,
+	ERR_NOFREESPACE,
+	ERR_FILENAMEEXISTS,
+	ERR_FILENOTFOUND,
+	ERR_FOPENFAILEDREAD,
+	ERR_FOPENFAILEDWRITE,
+	ERR_DELETESPECIALDIR,
+	ERR_MALLOCFAILED,
+	ERR_ROOTDIRFULL
+} fs_result;
 
 typedef uint32_t FS_Directory;
 typedef uint32_t FS_FATEntry;
@@ -57,9 +71,9 @@ FS_Directory fs_get_root(FS_Instance * fsi);
 void print_info(FS_Instance * fsi);
 void print_dir(FS_Instance * fsi, FS_Directory currDir);
 FS_Directory change_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
-void get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
-void put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
-uint8_t make_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
+fs_result get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
+fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath);
+fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path);
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path);
 
 void fs_cleanup(FS_Instance * fsi);

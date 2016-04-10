@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ctype.h>
 #include "fat_fs.h"
 #include "fat.h"
 

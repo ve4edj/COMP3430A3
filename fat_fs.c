@@ -81,7 +81,7 @@ void loopPrintChar(uint8_t * str, int len) { for (int i = 0; i < len; printf("%c
 const char * units[] = {"B", "kB", "MB", "GB", "TB"};
 uint8_t scaleFileSize(long double * scaledSz) {
 	int currUnit = 0;
-	while (((long long)(*scaledSz / 1024)) > 0) {
+	while (((long long)(*scaledSz / 1000)) > 0) {
 		*scaledSz /= 1024;
 		currUnit++;
 	}

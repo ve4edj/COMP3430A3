@@ -340,24 +340,81 @@ uint8_t getNumberOfLongEntriesForFilename(char * filename) {
 	return ((strlen(filename) - 1) / LDIR_LettersPerEntry) + 1;
 }
 
-fs_result fillShortNameFromLongName(FS_Cluster dir, fatEntry * entry, FS_Instance * fsi) {
+void setNumericTail(fatEntry * entry, uint32_t tailVal) {
+	uint8_t tailPos = 7;
+	while (tailVal) {
+		entry->DIR_Name[tailPos--] = (tailVal % 10) + '0';
+		tailVal /= 10;
+	}
+	if (7 > tailPos)
+		entry->DIR_Name[tailPos] = '~';
+}
+
+fs_result fillShortNameFromLongName(FS_Cluster dir, fatEntry * entry, char * filename, FS_Instance * fsi) {
+	uint32_t currTail = 0;
+	char * name = strdup(filename);
+	if (NULL == name)
+		return ERR_MALLOCFAILED;
+	char * extension = strrchr(name, '.');
+	if (NULL != extension) {
+		*extension = '\0';
+		extension++;
+	}
+	uint8_t wasLossy = 0;
+	uint8_t j = 0;
+	for (uint8_t i = 0; i < strlen(name); i++) {
+		if (8 == j) {
+			wasLossy = 1;
+			break;
+		}
+		char c = toupper(name[i]);
+		if (' ' == c)
+			continue;
+		if ('.' == c)
+			continue;
+		if (!isValidFilenameChar(c, 0))
+			entry->DIR_Name[j++] = '_';
+		else
+			entry->DIR_Name[j++] = c;
+	}
+	while (8 > j) { entry->DIR_Name[j++] = ' '; }
+	if (wasLossy) {
+		setNumericTail(entry, ++currTail);
+	}
+	if (NULL != extension) {
+		for (uint8_t i = 0; i < strlen(extension); i++) {
+			if (DIR_Name_LENGTH == j)
+				break;
+			char c = toupper(extension[i]);
+			if (' ' == c)
+				continue;
+			if ('.' == c)
+				continue;
+			if (!isValidFilenameChar(c, 0))
+				entry->DIR_Name[j++] = '_';
+			else
+				entry->DIR_Name[j++] = c;
+		}
+	}
+	while (DIR_Name_LENGTH > j) { entry->DIR_Name[j++] = ' '; }
+	free(name);
+
 	FS_EntryList * el = getDirListing((FS_Cluster)dir, fsi);
+	FS_EntryList * curr = el;
 	uint8_t found = 0;
-	// create the short name
-	while (NULL != el) {
+	while (NULL != curr) {
 		// loop through the directory looking for the short name or long name
-		// if the short name is found but the long name is different, do the numeric tail thing and keep looking
-		// if the short name is found and either a) the long names are identical or b) neither have a long name, set found and break
+		// if the long name is found, set found and break
+		// if the short name is found and neither have a long name, set found and break
+		// if the short name is found but the long name is different or the found entry doesn't have a long name, update the numeric tail and restart looking
+		curr = curr->next;
+	}
+	while (NULL != el) {
 		FS_EntryList * toFree = el;
 		el = el->next;
 		freeFSEntryListItem(toFree);
 	}
 	if (found) {
-		while (NULL != el) {
-			FS_EntryList * toFree = el;
-			el = el->next;
-			freeFSEntryListItem(toFree);
-		}
 		return ERR_FILENAMEEXISTS;
 	}
 	return ERR_SUCCESS;
@@ -437,7 +494,7 @@ fs_result getNContiguousDirEntries(FH_DirEntryPos * dirEntry, FS_Cluster dir, ui
 
 fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_Instance * fsi) {
 	uint8_t LFNentries = getNumberOfLongEntriesForFilename(filename);
-	fs_result result = fillShortNameFromLongName(dir, entry, fsi);
+	fs_result result = fillShortNameFromLongName(dir, entry, filename, fsi);
 	if (ERR_SUCCESS != result)
 		return result;
 	FH_DirEntryPos * entryPos = malloc(sizeof(FH_DirEntryPos));

@@ -350,7 +350,15 @@ void setNumericTail(fatEntry * entry, uint32_t tailVal) {
 		entry->DIR_Name[tailPos] = '~';
 }
 
-fs_result fillShortNameFromLongName(FS_Cluster dir, fatEntry * entry, char * filename, FS_Instance * fsi) {
+fs_result fillShortNameFromLongName(FS_Cluster dir, fatEntry * entry, char * filename, uint8_t isSpecialEntry, FS_Instance * fsi) {
+	uint8_t j = 0;
+	if (isSpecialEntry) {
+		for (j = 0; j < strlen(filename); j++) {
+			entry->DIR_Name[j] = filename[j];
+		}
+		while (DIR_Name_LENGTH > j) { entry->DIR_Name[j++] = ' '; }
+		return ERR_SUCCESS;
+	}
 	uint32_t currTail = 0;
 	char * name = strdup(filename);
 	if (NULL == name)
@@ -361,7 +369,6 @@ fs_result fillShortNameFromLongName(FS_Cluster dir, fatEntry * entry, char * fil
 		extension++;
 	}
 	uint8_t wasLossy = 0;
-	uint8_t j = 0;
 	for (uint8_t i = 0; i < strlen(name); i++) {
 		if (8 == j) {
 			wasLossy = 1;
@@ -492,9 +499,9 @@ fs_result getNContiguousDirEntries(FH_DirEntryPos * dirEntry, FS_Cluster dir, ui
 	return ERR_SUCCESS;
 }
 
-fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, FS_Instance * fsi) {
-	uint8_t LFNentries = getNumberOfLongEntriesForFilename(filename);
-	fs_result result = fillShortNameFromLongName(dir, entry, filename, fsi);
+fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, uint8_t isSpecialEntry, FS_Instance * fsi) {
+	uint8_t LFNentries = (!isSpecialEntry) ? getNumberOfLongEntriesForFilename(filename) : 0;
+	fs_result result = fillShortNameFromLongName(dir, entry, filename, isSpecialEntry, fsi);
 	if (ERR_SUCCESS != result)
 		return result;
 	FH_DirEntryPos * entryPos = malloc(sizeof(FH_DirEntryPos));

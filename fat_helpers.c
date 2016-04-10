@@ -172,12 +172,12 @@ uint8_t isValidFilenameChar(char c, uint8_t isLongFilename) {
 
 uint16_t getLongNameLetterAtPos(int pos, fatLongName * ln) {
 	uint16_t letter = 0x0000;
-	if (pos < (LDIR_Name1_LENGTH / 2)) {
-		letter = ((uint16_t *)&ln->LDIR_Name1[0])[pos];
-	} else if (pos < ((LDIR_Name1_LENGTH + LDIR_Name2_LENGTH) / 2)) {
-		letter = ((uint16_t *)&ln->LDIR_Name2[0])[pos - (LDIR_Name1_LENGTH / 2)];
-	} else if (pos < ((LDIR_Name1_LENGTH + LDIR_Name2_LENGTH + LDIR_Name3_LENGTH) / 2)) {
-		letter = ((uint16_t *)&ln->LDIR_Name3[0])[pos - (LDIR_Name1_LENGTH + LDIR_Name2_LENGTH) / 2];
+	if (pos < LDIR_Name1_LENGTH) {
+		letter = ln->LDIR_Name1[pos];
+	} else if (pos < (LDIR_Name1_LENGTH + LDIR_Name2_LENGTH)) {
+		letter = ln->LDIR_Name2[pos - LDIR_Name1_LENGTH];
+	} else if (pos < (LDIR_Name1_LENGTH + LDIR_Name2_LENGTH + LDIR_Name3_LENGTH)) {
+		letter = ln->LDIR_Name3[pos - LDIR_Name1_LENGTH - LDIR_Name2_LENGTH];
 	}
 	return letter;
 }
@@ -435,9 +435,34 @@ void getLongNameSection(fatEntry * entry, fatLongName * ln, uint8_t section, uin
 	ln->LDIR_Type = 0;
 	ln->LDIR_Chksum = getLongNameChecksum(entry);
 	ln->LDIR_Zero = 0;
-	//ln->LDIR_Name1[LDIR_Name1_LENGTH] = ;
-	//ln->LDIR_Name2[LDIR_Name2_LENGTH] = ;
-	//ln->LDIR_Name3[LDIR_Name3_LENGTH] = ;
+	uint8_t offset = section * LDIR_LettersPerEntry;
+	uint8_t totalLen = strlen(filename);
+	for (uint8_t i = 0; i < LDIR_Name1_LENGTH; i++) {
+		if ((offset + i) < totalLen)
+			ln->LDIR_Name1[i] = filename[offset + i];
+		else if ((offset + i) == totalLen)
+			ln->LDIR_Name1[i] = 0x0000;
+		else
+			ln->LDIR_Name1[i] = 0xFFFF;
+	}
+	offset += LDIR_Name1_LENGTH;
+	for (uint8_t i = 0; i < LDIR_Name2_LENGTH; i++) {
+		if ((offset + i) < totalLen)
+			ln->LDIR_Name2[i] = filename[offset + i];
+		else if ((offset + i) == totalLen)
+			ln->LDIR_Name2[i] = 0x0000;
+		else
+			ln->LDIR_Name2[i] = 0xFFFF;
+	}
+	offset += LDIR_Name2_LENGTH;
+	for (uint8_t i = 0; i < LDIR_Name3_LENGTH; i++) {
+		if ((offset + i) < totalLen)
+			ln->LDIR_Name3[i] = filename[offset + i];
+		else if ((offset + i) == totalLen)
+			ln->LDIR_Name3[i] = 0x0000;
+		else
+			ln->LDIR_Name3[i] = 0xFFFF;
+	}
 }
 
 fs_result getNContiguousDirEntries(FH_DirEntryPos * dirEntry, FS_Cluster dir, uint8_t numEntries, FS_Instance * fsi) {

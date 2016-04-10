@@ -12,10 +12,10 @@
 
 /* directory entry constants */
 #define DIR_Name_LENGTH 11
-#define LDIR_Name1_LENGTH 10
-#define LDIR_Name2_LENGTH 12
-#define LDIR_Name3_LENGTH 4
-#define LDIR_LettersPerEntry ((LDIR_Name1_LENGTH + LDIR_Name2_LENGTH + LDIR_Name3_LENGTH) / 2)
+#define LDIR_Name1_LENGTH 5
+#define LDIR_Name2_LENGTH 6
+#define LDIR_Name3_LENGTH 2
+#define LDIR_LettersPerEntry (LDIR_Name1_LENGTH + LDIR_Name2_LENGTH + LDIR_Name3_LENGTH)
 
 #pragma pack(push)
 #pragma pack(1)
@@ -97,13 +97,13 @@ struct fatEntry_struct {
 
 struct fatLongName_struct {
 	uint8_t LDIR_Ord;
-	uint8_t LDIR_Name1[LDIR_Name1_LENGTH];
+	uint16_t LDIR_Name1[LDIR_Name1_LENGTH];
 	uint8_t LDIR_Attr;
 	uint8_t LDIR_Type;
 	uint8_t LDIR_Chksum;
-	uint8_t LDIR_Name2[LDIR_Name2_LENGTH];
+	uint16_t LDIR_Name2[LDIR_Name2_LENGTH];
 	uint16_t LDIR_Zero;
-	uint8_t LDIR_Name3[LDIR_Name3_LENGTH];
+	uint16_t LDIR_Name3[LDIR_Name3_LENGTH];
 };
 #pragma pack(pop)
 

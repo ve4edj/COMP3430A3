@@ -197,7 +197,7 @@ void print_dir(FS_Instance * fsi, FS_Directory currDir) {
 		printf(" ");
 		fatDate * cDate = &(ent->entry->DIR_WrtDate);
 		fatTime * cTime = &(ent->entry->DIR_WrtTime);
-		printf("%04d/%02d/%02d %02d:%02d:%02d", cDate->year + 1980, cDate->month, cDate->day, cTime->hour, cTime->min, (cTime->sec * 2) + (ent->entry->DIR_CrtTimeTenth / 20));
+		printf("%04d/%02d/%02d %02d:%02d:%02d", cDate->year + 1980, cDate->month, cDate->day, cTime->hour, cTime->min, (cTime->sec * 2) + (ent->entry->DIR_CrtTimeTenth / 100));
 		if (ent->filename) {
 			printf(" ( ");
 			int idx = 0;
@@ -303,7 +303,7 @@ void fillEntryForNewItem(fatEntry * entry, FS_Cluster cluster, uint8_t attrs, ui
 	for (int i = 0; i < DIR_Name_LENGTH; entry->DIR_Name[i++] = '\0');
 	entry->DIR_Attr = attrs;
 	entry->DIR_NTRes = 0;
-	entry->DIR_CrtTimeTenth = ((now->tm_sec % 2) * 100) + (tv->tv_usec / 1000);
+	entry->DIR_CrtTimeTenth = ((now->tm_sec % 2) * 100) + (tv->tv_usec / 100000);
 	entry->DIR_CrtTime = *currTime;
 	entry->DIR_CrtDate = *currDate;
 	entry->DIR_LstAccDate = *currDate;

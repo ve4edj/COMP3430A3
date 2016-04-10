@@ -324,7 +324,7 @@ fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 	uint16_t numClustersForFile = (fileSz / bytesPerCluster) + 1;
 	FS_Cluster file = getNextFreeCluster(fsi);
 	FS_Cluster curr = file, next = file;
-	while (--numClustersForFile > 0) {
+	while (numClustersForFile-- > 0) {
 		next = getNextFreeCluster(fsi);
 		if (1 == next) {
 			if (1 != curr)
@@ -332,6 +332,7 @@ fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 			break;
 		}
 		setFATEntryForCluster(curr, next, fsi);
+		setFATEntryForCluster(next, getEOFMarker(fsi), fsi);
 		curr = next;
 	}
 	if (1 == next) {
@@ -396,7 +397,6 @@ fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 }
 
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path) {
-	// look up the file in the directory
 	// if it's a file, mark its clusters in the FAT as free, set its' LFN and dir entries to free
 	// if it's a dir, recursively delete all nested dirs, then delete all children, then delete dir
 }

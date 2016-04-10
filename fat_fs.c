@@ -290,7 +290,7 @@ fs_result get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 	return ERR_FILENOTFOUND;
 }
 
-void fillEntryForNewItem(fatEntry * entry, FS_Cluster cluster, uint8_t attrs, uint32_t size, struct timeval * tv, char * name) {
+void fillEntryForNewItem(fatEntry * entry, FS_Cluster cluster, uint8_t attrs, uint32_t size, struct timeval * tv) {
 	struct tm * now = localtime(&(tv->tv_sec));
 	fatDate * currDate = malloc(sizeof(fatDate));
 	fatTime * currTime = malloc(sizeof(fatTime));
@@ -300,9 +300,7 @@ void fillEntryForNewItem(fatEntry * entry, FS_Cluster cluster, uint8_t attrs, ui
 	currTime->hour = now->tm_hour;
 	currTime->min = now->tm_min;
 	currTime->sec = now->tm_sec / 2;
-	for (int i = 0; i < DIR_Name_LENGTH; i++) {
-		entry->DIR_Name[i] = ((NULL == name) || (strlen(name) <= i)) ? '\0' : name[i];
-	}
+	for (int i = 0; i < DIR_Name_LENGTH; entry->DIR_Name[i++] = '\0');
 	entry->DIR_Attr = attrs;
 	entry->DIR_NTRes = 0;
 	entry->DIR_CrtTimeTenth = ((now->tm_sec % 2) * 100) + (tv->tv_usec / 1000);
@@ -351,7 +349,7 @@ fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 	fatEntry * entry = malloc(sizeof(fatEntry));
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	fillEntryForNewItem(entry, file, ATTR_ARCHIVE, (uint32_t)fileSz, &tv, NULL);
+	fillEntryForNewItem(entry, file, ATTR_ARCHIVE, (uint32_t)fileSz, &tv);
 	uint8_t result = addDirListing(currDir, path, entry, 0, fsi);
 	free(entry);
 	if (ERR_SUCCESS == result) {
@@ -384,13 +382,13 @@ fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 	fatEntry * entry = malloc(sizeof(fatEntry));
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
-	fillEntryForNewItem(entry, cluster, ATTR_DIRECTORY | ATTR_ARCHIVE, 0, &tv, NULL);
+	fillEntryForNewItem(entry, cluster, ATTR_DIRECTORY | ATTR_ARCHIVE, 0, &tv);
 	fs_result result = addDirListing(currDir, path, entry, 0, fsi);
 	if (ERR_SUCCESS == result) {
 		setFATEntryForCluster(cluster, getEOFMarker(fsi), fsi);
-		fillEntryForNewItem(entry, cluster, ATTR_DIRECTORY, 0, &tv, ".");
+		fillEntryForNewItem(entry, cluster, ATTR_DIRECTORY, 0, &tv);
 		addDirListing(cluster, ".", entry, 1, fsi);
-		fillEntryForNewItem(entry, ((fs_get_root(fsi) == currDir) ? 0 : currDir), ATTR_DIRECTORY, 0, &tv, "..");
+		fillEntryForNewItem(entry, ((fs_get_root(fsi) == currDir) ? 0 : currDir), ATTR_DIRECTORY, 0, &tv);
 		addDirListing(cluster, "..", entry, 1, fsi);
 	}
 	free(entry);

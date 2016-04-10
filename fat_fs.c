@@ -382,10 +382,11 @@ fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 	fatEntry * entry = malloc(sizeof(fatEntry));
 	fillEntryForNewItem(entry, cluster, ATTR_DIRECTORY | ATTR_ARCHIVE, 0);
 	fs_result result = addDirListing(currDir, path, entry, fsi);
-	free(entry);
 	if (ERR_SUCCESS == result) {
 		setFATEntryForCluster(cluster, getEOFMarker(fsi), fsi);
+		// add the '.' and '..' entries to the dir
 	}
+	free(entry);
 	return result;
 }
 

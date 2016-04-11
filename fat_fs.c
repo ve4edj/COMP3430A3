@@ -118,7 +118,7 @@ void print_info(FS_Instance * fsi) {
 	printf("Media Type: 0x%2X (%sremovable)\n", bs->BPB_Media, (bs->BPB_Media == 0xF8) ? "non-" : "");
 	long double scaledSz = fsi->totalSize;
 	int theUnit = scaleFileSize(&scaledSz);
-	printf("Size: %llu bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[theUnit]);
+	printf("Size: %"PRIu64" bytes (%.3Lf %s)\n", fsi->totalSize, scaledSz, units[theUnit]);
 	printf("\n");
 	printf("Disk geometry:\n--------------\n");
 	printf("Bytes Per Sector: %u\n", bs->BPB_BytsPerSec);
@@ -138,8 +138,8 @@ void print_info(FS_Instance * fsi) {
 	printf("FAT Size (sectors): %u\n", fsi->FATsz);
 	printf("Number of FATs: %u\n", fsi->bootsect->BPB_NumFATs);
 	printf("Reserved sectors: %u\n", fsi->bootsect->BPB_RsvdSecCnt);
-	printf("Root directory sectors: %llu\n", fsi->rootDirSectors);
-	printf("Data clusters: %llu\n", fsi->countOfClusters);
+	printf("Root directory sectors: %"PRIu64"\n", fsi->rootDirSectors);
+	printf("Data clusters: %"PRIu64"\n", fsi->countOfClusters);
 	if (NULL != fsi->fsInfo) {
 		if ((fsi->fsInfo->FSI_LeadSig == 0x41615252) && (fsi->fsInfo->FSI_StrucSig == 0x61417272) && (fsi->fsInfo->FSI_TrailSig == 0xAA550000))
 			printf("FAT32 FSInfo signature check passed\n");

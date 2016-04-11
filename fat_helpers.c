@@ -557,7 +557,7 @@ fs_result getNContiguousDirEntries(FS_DirEntryInfo * dirEntry, FS_Cluster dir, F
 	free(entries);
 	if (found)
 		return ERR_SUCCESS;
-	if (isSpecialRootDir)
+	if (specialRootDir)
 		return ERR_ROOTDIRFULL;
 	FS_Cluster nextCluster = getNextFreeCluster(fsi);
 	if (1 == nextCluster)

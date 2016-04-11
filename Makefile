@@ -3,7 +3,7 @@
 PRGM   = fatshell
 SRCS   = shell.c fat_fs.c fat_helpers.c
 LIBS   = 
-CFLAGS = -std=c99 -g -Wall
+CFLAGS = -std=gnu99 -g -Wall
 
 #note to future self: do not modify below this line :)
 

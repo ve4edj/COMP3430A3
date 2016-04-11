@@ -143,7 +143,7 @@ void print_info(FS_Instance * fsi) {
 	if (NULL != fsi->fsInfo) {
 		if ((fsi->fsInfo->FSI_LeadSig == 0x41615252) && (fsi->fsInfo->FSI_StrucSig == 0x61417272) && (fsi->fsInfo->FSI_TrailSig == 0xAA550000))
 			printf("FAT32 FSInfo signature check passed\n");
-		printf("FAT32 - Free Cluster Count: %lu", fsi->fsInfo->FSI_Free_Count);
+		printf("FAT32 - Free Cluster Count: %u", fsi->fsInfo->FSI_Free_Count);
 		printf("FAT32 - Next Free Cluster: 0x%08X", fsi->fsInfo->FSI_Nxt_Free);
 	}
 	uint32_t freeClusters = 0;
@@ -411,8 +411,26 @@ fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
 }
 
 FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path) {
-	// if it's a file, mark its clusters in the FAT as free, set its' LFN and dir entries to free
-	// if it's a dir, recursively delete all nested dirs, then delete all children, then delete dir
+	FS_EntryList * el = getDirListing((FS_Cluster)currDir, fsi);
+	uint8_t found = 0;
+	while (NULL != el) {
+		FS_Entry * ent = el->node;
+		if (!found) {
+			char * filename = getFilenameForEntry(ent->entry);
+			if (strcmp(path, filename) == 0) {
+				found = 1;
+				deleteDirListing(currDir, ent, fsi);
+			}
+			free(filename);
+		}
+		FS_EntryList * toFree = el;
+		el = el->next;
+		freeFSEntryListItem(toFree);
+	}
+	if (found) {
+		return ERR_SUCCESS;
+	}
+	return ERR_FILENOTFOUND;
 }
 
 void fs_cleanup(FS_Instance * fsi) {

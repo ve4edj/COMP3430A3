@@ -52,9 +52,16 @@ struct FS_Instance_struct {
 	FS_Directory rootDirPos;
 };
 
+struct FS_DirEntryInfo_struct {
+	FS_Cluster cluster;
+	uint32_t index;
+	uint8_t numEntries;
+};
+
 struct FS_Entry_struct {
 	uint16_t * filename;
 	fatEntry * entry;
+	struct FS_DirEntryInfo_struct * info;
 };
 
 struct FS_EntryList_struct {
@@ -63,6 +70,7 @@ struct FS_EntryList_struct {
 };
 
 typedef struct FS_Instance_struct FS_Instance;
+typedef struct FS_DirEntryInfo_struct FS_DirEntryInfo;
 typedef struct FS_Entry_struct FS_Entry;
 typedef struct FS_EntryList_struct FS_EntryList;
 

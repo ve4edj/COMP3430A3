@@ -219,6 +219,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 	if (NULL == entries)
 		return NULL;
 	uint16_t * longName = NULL;
+	FS_DirEntryInfo * info = NULL;
 	FS_EntryList * listHead = NULL;
 	FS_EntryList * listTail = NULL;
 	if (specialRootDir)
@@ -239,9 +240,14 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 				entry->DIR_Name[0] = 0xE5;
 			if (maskAndTest(entry->DIR_Attr, ATTR_LONG_NAME)) {
 				fatLongName * ln = (fatLongName *)entry;
-				if (NULL == longName)
+				if (NULL == longName) {
 					longName = calloc(getLongNameLength(ln) + 1, sizeof(uint16_t));
-				if (NULL == longName)
+					info = malloc(sizeof(FS_DirEntryInfo));
+					info->cluster = dir;
+					info->index = i;
+					info->numEntries = (ln->LDIR_Ord & ~(LAST_LONG_ENTRY)) + 1;
+				}
+				if ((NULL == longName) || (NULL == info))
 					return NULL;															// should do some cleanup here
 				if (0 != ln->LDIR_Type) {
 					free(longName);
@@ -281,6 +287,16 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 				memcpy(listEntry->node->entry, entry, sizeof(fatEntry));
 				listEntry->node->filename = longName;
 				longName = NULL;
+				if (NULL == info) {
+					info = malloc(sizeof(FS_DirEntryInfo));
+					info->cluster = dir;
+					info->index = i;
+					info->numEntries = 1;
+				}
+				if (NULL == info)
+					return NULL;															// should do some cleanup here
+				listEntry->node->info = info;
+				info = NULL;
 				listEntry->next = NULL;
 				if (NULL != listTail)
 					listTail->next = listEntry;
@@ -301,6 +317,7 @@ FS_EntryList * getDirListing(FS_Cluster dir, FS_Instance * fsi) {
 void freeFSEntryListItem(FS_EntryList * toFree) {
 	free(toFree->node->filename);
 	free(toFree->node->entry);
+	free(toFree->node->info);
 	free(toFree->node);
 	free(toFree);
 }
@@ -493,7 +510,7 @@ void getLongNameSection(fatEntry * entry, fatLongName * ln, uint8_t section, uin
 	}
 }
 
-fs_result getNContiguousDirEntries(FH_DirEntryPos * dirEntry, FS_Cluster dir, uint8_t numEntries, FS_Instance * fsi) {
+fs_result getNContiguousDirEntries(FS_DirEntryInfo * dirEntry, FS_Cluster dir, FS_Instance * fsi) {
 	uint8_t found = 0;
 	uint8_t freeEntriesFound = 0;
 	FS_Cluster lastDir;
@@ -524,7 +541,7 @@ fs_result getNContiguousDirEntries(FH_DirEntryPos * dirEntry, FS_Cluster dir, ui
 				freeEntriesFound++;
 			else
 				freeEntriesFound = 0;
-			if (freeEntriesFound >= numEntries) {
+			if (freeEntriesFound >= dirEntry->numEntries) {
 				found = 1;
 				break;
 			}
@@ -557,10 +574,11 @@ fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, uint8
 	fs_result result = fillShortNameFromLongName(dir, entry, filename, isSpecialEntry, fsi);
 	if (ERR_SUCCESS != result)
 		return result;
-	FH_DirEntryPos * entryPos = malloc(sizeof(FH_DirEntryPos));
+	FS_DirEntryInfo * entryPos = malloc(sizeof(FS_DirEntryInfo));
 	if (NULL == entryPos)
 		return ERR_MALLOCFAILED;
-	result = getNContiguousDirEntries(entryPos, dir, LFNentries + 1, fsi);
+	entryPos->numEntries = LFNentries + 1;
+	result = getNContiguousDirEntries(entryPos, dir, fsi);
 	if (ERR_SUCCESS != result) {
 		free(entryPos);
 		return result;
@@ -579,6 +597,34 @@ fs_result addDirListing(FS_Cluster dir, char * filename, fatEntry * entry, uint8
 	}
 	fwrite(entry, sizeof(fatEntry), 1, fsi->disk);
 	return ERR_SUCCESS;
+}
+
+void deleteDirListing(FS_Cluster dir, FS_Entry * ent, FS_Instance * fsi) {
+	FS_Cluster cluster = (ent->entry->DIR_FstClusHI << 8) + ent->entry->DIR_FstClusLO;
+	if (maskAndTest(ent->entry->DIR_Attr, ATTR_DIRECTORY)) {
+		FS_EntryList * el = getDirListing(cluster, fsi);
+		while (NULL != el) {
+			if (el->node->entry->DIR_Name[0] != '.')
+				deleteDirListing(cluster, el->node, fsi);
+			FS_EntryList * toFree = el;
+			el = el->next;
+			freeFSEntryListItem(toFree);
+		}
+	} else {
+		FS_Cluster next;
+		do {
+			next = getFATEntryForCluster(cluster, fsi);
+			setFATEntryForCluster(cluster, 0, fsi);
+			cluster = next;
+		} while (!isFATEntryEOF(next, fsi));
+	}
+	ent->entry->DIR_Name[0] = 0xE5;
+	uint64_t seekTo = ent->info->cluster;
+	if (!isSpecialRootDir(dir, fsi))
+		seekTo = getFirstSectorOfCluster(ent->info->cluster, fsi);
+	fseek(fsi->disk, (seekTo * fsi->bootsect->BPB_BytsPerSec) + (ent->info->index * sizeof(fatEntry)), SEEK_SET);
+	for (int i = 0; i < ent->info->numEntries; i++)
+		fwrite(ent->entry, sizeof(fatEntry), 1, fsi->disk);
 }
 
 void zeroCluster(FS_Cluster cluster, FS_Instance * fsi) {

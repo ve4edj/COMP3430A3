@@ -297,6 +297,8 @@ fs_result get_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 				file = getFATEntryForCluster(file, fsi);
 			} while (!isFATEntryEOF(file, fsi));
 			free(cluster);
+			fflush(localFile);
+			fclose(localFile);
 			return ERR_SUCCESS;
 		}
 		return ERR_FOPENFAILEDWRITE;
@@ -331,45 +333,45 @@ void fillEntryForNewItem(fatEntry * entry, FS_Cluster cluster, uint8_t attrs, ui
 }
 
 fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * localPath) {
-	struct stat stats;
-	stat(path, &stats);
-	off_t fileSz = stats.st_size;
-	uint32_t bytesPerCluster = fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
-	uint16_t numClustersForFile = (fileSz / bytesPerCluster) + 1;
-	FS_Cluster file = getNextFreeCluster(fsi);
-	FS_Cluster curr = file, next = file;
-	while (numClustersForFile-- > 0) {
-		next = getNextFreeCluster(fsi);
+	FILE * localFile = fopen(localPath, "rb");
+	if (NULL != localFile) {
+		struct stat stats;
+		stat(localPath, &stats);
+		off_t fileSz = stats.st_size;
+		uint32_t bytesPerCluster = fsi->bootsect->BPB_SecPerClus * fsi->bootsect->BPB_BytsPerSec;
+		uint16_t numClustersForFile = (fileSz / bytesPerCluster) + 1;
+		FS_Cluster file = getNextFreeCluster(fsi);
+		FS_Cluster curr = file, next = file;
+		while (numClustersForFile-- > 0) {
+			next = getNextFreeCluster(fsi);
+			if (1 == next) {
+				if (1 != curr)
+					setFATEntryForCluster(curr, getEOFMarker(fsi), fsi);
+				break;
+			}
+			setFATEntryForCluster(curr, next, fsi);
+			setFATEntryForCluster(next, getEOFMarker(fsi), fsi);
+			curr = next;
+		}
 		if (1 == next) {
-			if (1 != curr)
-				setFATEntryForCluster(curr, getEOFMarker(fsi), fsi);
-			break;
+			if (1 != file) {
+				do {
+					curr = getFATEntryForCluster(file, fsi);
+					setFATEntryForCluster(file, 0, fsi);
+					file = curr;
+				} while (!isFATEntryEOF(file, fsi));
+			}
+			return ERR_NOFREESPACE;
 		}
-		setFATEntryForCluster(curr, next, fsi);
 		setFATEntryForCluster(next, getEOFMarker(fsi), fsi);
-		curr = next;
-	}
-	if (1 == next) {
-		if (1 != file) {
-			do {
-				curr = getFATEntryForCluster(file, fsi);
-				setFATEntryForCluster(file, 0, fsi);
-				file = curr;
-			} while (!isFATEntryEOF(file, fsi));
-		}
-		return ERR_NOFREESPACE;
-	}
-	setFATEntryForCluster(next, getEOFMarker(fsi), fsi);
-	zeroCluster(next, fsi);
-	fatEntry * entry = malloc(sizeof(fatEntry));
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	fillEntryForNewItem(entry, file, ATTR_ARCHIVE, (uint32_t)fileSz, &tv);
-	uint8_t result = addDirListing(currDir, path, entry, 0, fsi);
-	free(entry);
-	if (ERR_SUCCESS == result) {
-		FILE * localFile = fopen(localPath, "rb");
-		if (NULL != localFile) {
+		zeroCluster(next, fsi);
+		fatEntry * entry = malloc(sizeof(fatEntry));
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		fillEntryForNewItem(entry, file, ATTR_ARCHIVE, (uint32_t)fileSz, &tv);
+		uint8_t result = addDirListing(currDir, path, entry, 0, fsi);
+		free(entry);
+		if (ERR_SUCCESS == result) {
 			uint8_t * cluster = malloc(sizeof(uint8_t) * bytesPerCluster);
 			do {
 				size_t bytesToRead = sizeof(uint8_t) * bytesPerCluster;
@@ -383,10 +385,17 @@ fs_result put_file(FS_Instance * fsi, FS_Directory currDir, char * path, char * 
 			} while (!isFATEntryEOF(file, fsi));
 			free(cluster);
 			return ERR_SUCCESS;
+		} else {
+			do {
+				curr = getFATEntryForCluster(file, fsi);
+				setFATEntryForCluster(file, 0, fsi);
+				file = curr;
+			} while (!isFATEntryEOF(file, fsi));
 		}
-		return ERR_FOPENFAILEDREAD;
+		fclose(localFile);
+		return result;
 	}
-	return result;
+	return ERR_FOPENFAILEDREAD;
 }
 
 fs_result make_dir(FS_Instance * fsi, FS_Directory currDir, char * path) {
@@ -436,6 +445,7 @@ FS_Directory delete_file(FS_Instance * fsi, FS_Directory currDir, char * path) {
 void fs_cleanup(FS_Instance * fsi) {
 	if (NULL != fsi) {
 		if (NULL != fsi->disk) {
+			fflush(fsi->disk);
 			fclose(fsi->disk);
 		}
 		free(fsi->bootsect);

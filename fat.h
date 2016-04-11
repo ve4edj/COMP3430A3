@@ -19,6 +19,7 @@
 
 #pragma pack(push)
 #pragma pack(1)
+
 struct fatBS_struct {
 	uint8_t BS_jmpBoot[3];
 	uint8_t BS_OEMName[BS_OEMName_LENGTH];
@@ -105,6 +106,17 @@ struct fatLongName_struct {
 	uint16_t LDIR_Zero;
 	uint16_t LDIR_Name3[LDIR_Name3_LENGTH];
 };
+
+struct fat32FSInfo_struct {
+	uint32_t FSI_LeadSig;
+	uint8_t FSI_Reserved1[480];
+	uint32_t FSI_StrucSig;
+	uint32_t FSI_Free_Count;
+	uint32_t FSI_Nxt_Free;
+	uint8_t FSI_Reserved2[12];
+	uint32_t FSI_TrailSig;
+};
+
 #pragma pack(pop)
 
 #define ATTR_READ_ONLY 0x01
@@ -124,5 +136,6 @@ typedef struct fatDate_struct fatDate;
 typedef struct fatTime_struct fatTime;
 typedef struct fatEntry_struct fatEntry;
 typedef struct fatLongName_struct fatLongName;
+typedef struct fat32FSInfo_struct fat32FSInfo;
 
 #endif

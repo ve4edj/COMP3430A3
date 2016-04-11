@@ -42,6 +42,7 @@ struct FS_Instance_struct {
 	fatBS * bootsect;
 	fatBS16 * bootsect16;
 	fatBS32 * bootsect32;
+	fat32FSInfo * fsInfo;
 	uint32_t FATsz;
 	uint32_t numSectors;
 	uint64_t totalSize;

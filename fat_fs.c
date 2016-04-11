@@ -29,6 +29,13 @@ FS_Instance * fs_create_instance(char * imagePath) {
 		fsi->type = FS_FAT32;
 		fread(fsi->bootsect32, sizeof(fatBS32), 1, fsi->disk);
 		fsi->FATsz = fsi->bootsect32->BPB_FATSz32;
+		fsi->fsInfo = malloc(sizeof(fat32FSInfo));
+		if (NULL == fsi->fsInfo) {
+			fs_cleanup(fsi);
+			return NULL;
+		}
+		fseek(fsi->disk, (fsi->bootsect32->BPB_FSInfo * fsi->bootsect->BPB_BytsPerSec), SEEK_SET);
+		fread(fsi->fsInfo, sizeof(fat32FSInfo), 1, fsi->disk);
 	} else {
 		fsi->bootsect32 = NULL;
 		fsi->bootsect16 = malloc(sizeof(fatBS16));
@@ -38,6 +45,7 @@ FS_Instance * fs_create_instance(char * imagePath) {
 		}
 		fsi->type = FS_FAT16;
 		fread(fsi->bootsect16, sizeof(fatBS16), 1, fsi->disk);
+		fsi->fsInfo = NULL;
 	}
 	if (0 != fsi->bootsect->BPB_FATSz16)
 		fsi->FATsz = fsi->bootsect->BPB_FATSz16;
@@ -132,6 +140,12 @@ void print_info(FS_Instance * fsi) {
 	printf("Reserved sectors: %u\n", fsi->bootsect->BPB_RsvdSecCnt);
 	printf("Root directory sectors: %llu\n", fsi->rootDirSectors);
 	printf("Data clusters: %llu\n", fsi->countOfClusters);
+	if (NULL != fsi->fsInfo) {
+		if ((fsi->fsInfo->FSI_LeadSig == 0x41615252) && (fsi->fsInfo->FSI_StrucSig == 0x61417272) && (fsi->fsInfo->FSI_TrailSig == 0xAA550000))
+			printf("FAT32 FSInfo signature check passed\n");
+		printf("FAT32 - Free Cluster Count: %lu", fsi->fsInfo->FSI_Free_Count);
+		printf("FAT32 - Next Free Cluster: 0x%08X", fsi->fsInfo->FSI_Nxt_Free);
+	}
 	uint32_t freeClusters = 0;
 	for (int i = 0; i < fsi->countOfClusters; i++) {
 		if (getFATEntryForCluster(i+2, fsi) == 0) {
@@ -406,15 +420,10 @@ void fs_cleanup(FS_Instance * fsi) {
 		if (NULL != fsi->disk) {
 			fclose(fsi->disk);
 		}
-		if (NULL != fsi->bootsect) {
-			free(fsi->bootsect);
-		}
-		if (NULL != fsi->bootsect16) {
-			free(fsi->bootsect16);
-		}
-		if (NULL != fsi->bootsect32) {
-			free(fsi->bootsect32);
-		}
+		free(fsi->bootsect);
+		free(fsi->bootsect16);
+		free(fsi->bootsect32);
+		free(fsi->fsInfo);
 		free(fsi);
 	}
 }
